@@ -6,5 +6,5 @@ pip install flet
 ### Step 2
 masuk ke directory project lalu jalankan program
 ```python
-flet run counter.py
+flet run main.py
 ```
