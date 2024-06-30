@@ -1,4 +1,16 @@
 {
-    "naqiqi": "123456",
-    "gibran": "123456"
+    "data": [
+        {
+            "username": "naqiqi",
+            "password": "123456"
+        },
+        {
+            "username": "gibran",
+            "password": "123456"
+        },
+        {
+            "username": "bepe",
+            "password": "123456"
+        }
+    ]
 }

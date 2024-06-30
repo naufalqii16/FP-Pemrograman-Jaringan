@@ -16,17 +16,17 @@ def main(page: ft.Page):
     def open_chat(profile):
         global current_chat_room  # Use global to modify global variable
 
-        if current_chat_room != profile["name"]:
-            current_chat_room = profile["name"]
+        if current_chat_room != profile["username"]:
+            current_chat_room = profile["username"]
             chat_room_messages.clear()  # Clear previous messages
 
             page.snack_bar = ft.SnackBar(
-                ft.Text(f"Opening chat with {profile['name']}"),
+                ft.Text(f"Opening chat with {profile['username']}"),
                 bgcolor=ft.colors.GREEN,
             )
             page.snack_bar.open = True
             page.update()
-            update_chat_room(profile["name"])  # Update chat room with new room name
+            update_chat_room(profile["username"])  # Update chat room with new room name
 
     def update_chat_room(room_name):
         chat_room.content = ft.Column([
@@ -52,29 +52,29 @@ def main(page: ft.Page):
         page.vertical_alignment = ft.MainAxisAlignment.START
         page.padding = 20
 
-        messages = [
-            {"name": "Ddedida", "message": "Ayo sholat Jumat", "time": "11.43", "new_messages": 1},
-            {"name": "Remaja Masjid", "message": "Kapan sholat rek", "time": "10.55", "new_messages": 1},
-            {"name": "Intger", "message": "Ayo sholat Isya", "time": "Yesterday", "new_messages": 1}
-        ]
+        with open('../db/user.json', 'r') as f:
+            data = json.load(f)
+
+        messages = data["data"]
 
         message_list = []
         for msg in messages:
-            message_list.append(
-                ft.ListTile(
-                    leading=ft.CircleAvatar(
-                        content=ft.Text(
-                            msg["name"][0],
-                            style=ft.TextStyle(color=ft.colors.WHITE, size=20)
+            if msg["username"] != current_user:  # Exclude current user's profile
+                message_list.append(
+                    ft.ListTile(
+                        leading=ft.CircleAvatar(
+                            content=ft.Text(
+                                msg["username"][0],
+                                style=ft.TextStyle(color=ft.colors.WHITE, size=20)
+                            ),
+                            bgcolor=ft.colors.PURPLE,
+                            radius=20
                         ),
-                        bgcolor=ft.colors.PURPLE,
-                        radius=20
-                    ),
-                    title=ft.Text(msg["name"], weight=ft.FontWeight.BOLD),
-                    height=70,
-                    on_click=lambda e, msg=msg: open_chat(msg)  # Make each profile clickable
+                        title=ft.Text(msg["username"], weight=ft.FontWeight.BOLD),
+                        height=70,
+                        on_click=lambda e, msg=msg: open_chat(msg)  # Make each profile clickable
+                    )
                 )
-            )
 
         create_group_button = ft.ElevatedButton(
             text="Create New Group",
@@ -167,18 +167,20 @@ def main(page: ft.Page):
                 return
 
             # Check the provided credentials
-            if username in data and data[username] == password:
-                print("Login Successful")
-                current_user = username
-                main_page_content()  # Switch to main page content
-            else:
-                print("Username or Password Incorrect")
-                page.snack_bar = ft.SnackBar(
-                    ft.Text("Username or Password Incorrect", color=ft.colors.WHITE),
-                    bgcolor=ft.colors.RED,
-                )
-                page.snack_bar.open = True
-                page.update()
+            for user in data["data"]:
+                if user["username"] == username and user["password"] == password:
+                    print("Login Successful")
+                    current_user = username
+                    main_page_content()  # Switch to main page content
+                    return
+
+            print("Username or Password Incorrect")
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Username or Password Incorrect", color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED,
+            )
+            page.snack_bar.open = True
+            page.update()
 
         def show_register_form(e):
             register_form()
@@ -237,20 +239,21 @@ def main(page: ft.Page):
                 with open('../db/user.json', 'r') as f:
                     data = json.load(f)
             except FileNotFoundError:
-                data = {}
+                data = {"data": []}
 
             # Check if username already exists
-            if username in data:
-                page.snack_bar = ft.SnackBar(
-                    ft.Text("Username already exists. Please choose a different username.", color=ft.colors.WHITE),
-                    bgcolor=ft.colors.RED,
-                )
-                page.snack_bar.open = True
-                page.update()
-                return
+            for user in data["data"]:
+                if user["username"] == username:
+                    page.snack_bar = ft.SnackBar(
+                        ft.Text("Username already exists. Please choose a different username.", color=ft.colors.WHITE),
+                        bgcolor=ft.colors.RED,
+                    )
+                    page.snack_bar.open = True
+                    page.update()
+                    return
 
             # Add new user to JSON data
-            data[username] = password
+            data["data"].append({"username": username, "password": password})
 
             # Write back to the JSON file
             with open('../db/user.json', 'w') as f:
