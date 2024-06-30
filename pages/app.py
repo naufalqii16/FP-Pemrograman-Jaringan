@@ -4,21 +4,13 @@ import json
 def main(page: ft.Page):
     page.title = "Login Screen"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
-    # Define main page content
     def main_page_content():
+        page.clean()
         page.title = "ConvoHub"
         page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        page.vertical_alignment = ft.MainAxisAlignment.START
         page.padding = 20
-
-        search_box = ft.TextField(
-            hint_text="Search",
-            prefix_icon=ft.icons.SEARCH,
-            width=300,
-            height=40,
-            border_color=ft.colors.BLUE
-        )
 
         messages = [
             {"name": "Ddedida", "message": "Ayo sholat Jumat", "time": "11.43", "new_messages": 1},
@@ -39,44 +31,27 @@ def main(page: ft.Page):
                         radius=20
                     ),
                     title=ft.Text(msg["name"], weight=ft.FontWeight.BOLD),
-                    subtitle=ft.Text(msg["message"]),
-                    trailing=ft.Column(
-                        [
-                            ft.Text(msg["time"]),
-                            ft.Container(
-                                content=ft.Text(str(msg["new_messages"]), color=ft.colors.WHITE),
-                                bgcolor=ft.colors.BLUE,
-                                padding=ft.Padding(left=6, top=2, right=6, bottom=2),
-                                border_radius=ft.border_radius.all(12)
-                            ) if msg["new_messages"] > 0 else ft.Container()
-                        ],
-                        alignment=ft.MainAxisAlignment.CENTER
-                    ),
                     height=70
                 )
             )
-
-        new_message_button = ft.FloatingActionButton(
-            content=ft.Icon(ft.icons.ADD),
-            bgcolor=ft.colors.BLUE,
-            on_click=lambda _: print("New message")
-        )
 
         page.add(
             ft.Column(
                 [
                     ft.Row([ft.Text("ConvoHub.", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD))]),
-                    ft.Row([search_box], alignment=ft.MainAxisAlignment.CENTER),
                     ft.Column(message_list, spacing=10, width=350),
-                    ft.Row([new_message_button], alignment=ft.MainAxisAlignment.END)
                 ],
                 spacing=20,
                 alignment=ft.MainAxisAlignment.START
             )
         )
 
-    # Define login page content and logic
     def login_page_content():
+        page.clean()
+        page.title = "Login Screen"
+        page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        page.vertical_alignment = ft.MainAxisAlignment.CENTER
+
         def on_login(e):
             username = username_field.value
             password = password_field.value
@@ -98,7 +73,6 @@ def main(page: ft.Page):
             # Check the provided credentials
             if username in data and data[username] == password:
                 print("Login Successful")
-                page.clean()  # Clean the page content
                 main_page_content()  # Switch to main page content
             else:
                 print("Username or Password Incorrect")
