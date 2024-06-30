@@ -4,8 +4,6 @@ import json
 # Global variable to store logged-in user
 current_user = None
 
-
-
 def main(page: ft.Page):
     page.title = "Login Screen"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -55,6 +53,14 @@ def main(page: ft.Page):
             on_click=lambda e: print("Create New Group Clicked")
         )
 
+        logout_button = ft.ElevatedButton(
+            text="Logout",
+            on_click=logout,
+            bgcolor=ft.colors.RED,
+            color=ft.colors.WHITE,
+            width=100,
+        )
+
         chat_room_messages = []
 
         def send_message(e):
@@ -66,14 +72,6 @@ def main(page: ft.Page):
 
         message_input = ft.TextField(hint_text="Type a message", expand=True, border_color=ft.colors.WHITE)
         send_button = ft.ElevatedButton(text="Send", on_click=send_message)
-
-        logout_button = ft.ElevatedButton(
-            text="Logout",
-            on_click=logout,
-            bgcolor=ft.colors.RED,
-            color=ft.colors.WHITE,
-            width=100,
-        )
 
         chat_room = ft.Container(
             content=ft.Column([
@@ -124,6 +122,9 @@ def main(page: ft.Page):
         global current_user  # Use global to modify global variable
         current_user = None
         login_page_content()
+    
+    def back_to_login(e):
+        login_page_content()
 
     def login_page_content():
         page.clean()
@@ -164,6 +165,9 @@ def main(page: ft.Page):
                 page.snack_bar.open = True
                 page.update()
 
+        def show_register_form(e):
+            register_form()
+
         username_field = ft.TextField(label="Username", hint_text="username", width=300)
         password_field = ft.TextField(label="Password", password=True, width=300)
 
@@ -177,13 +181,9 @@ def main(page: ft.Page):
 
         signup_text = ft.TextButton(
             text="Sign Up",
-            on_click=lambda e: print("Navigate to Sign Up"),
+            on_click=show_register_form,
         )
 
-        forgot_password_text = ft.TextButton(
-            text="Forgot Password?",
-            on_click=lambda e: print("Navigate to Forgot Password"),
-        )
 
         page.add(
             ft.Column(
@@ -192,7 +192,6 @@ def main(page: ft.Page):
                     ft.Text("Welcome back, you have been missed :(", size=16),
                     username_field,
                     password_field,
-                    forgot_password_text,
                     login_button,
                     ft.Row(
                         [
@@ -207,6 +206,86 @@ def main(page: ft.Page):
                 spacing=10,
             )
         )
+
+    def register_page_content():
+        page.clean()
+        page.title = "Register"
+        page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        page.vertical_alignment = ft.MainAxisAlignment.CENTER
+
+        def on_register(e):
+            username = username_register.value
+            password = password_register.value
+
+            # Read existing user data or initialize an empty dictionary if the file doesn't exist
+            try:
+                with open('../db/user.json', 'r') as f:
+                    data = json.load(f)
+            except FileNotFoundError:
+                data = {}
+
+            # Check if username already exists
+            if username in data:
+                page.snack_bar = ft.SnackBar(
+                    ft.Text("Username already exists. Please choose a different username.", color=ft.colors.WHITE),
+                    bgcolor=ft.colors.RED,
+                )
+                page.snack_bar.open = True
+                page.update()
+                return
+
+            # Add new user to JSON data
+            data[username] = password
+
+            # Write back to the JSON file
+            with open('../db/user.json', 'w') as f:
+                json.dump(data, f, indent=4)
+
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Registration successful. You can now log in.", color=ft.colors.WHITE),
+                bgcolor=ft.colors.GREEN,
+            )
+            page.snack_bar.open = True
+            page.update()
+
+            login_page_content()
+
+        username_register = ft.TextField(label="Username", hint_text="Enter your username", width=300)
+        password_register = ft.TextField(label="Password", hint_text="Enter your password", password=True, width=300)
+
+        register_button = ft.ElevatedButton(
+            text="Register",
+            on_click=on_register,
+            width=300,
+            bgcolor=ft.colors.GREEN,
+            color=ft.colors.WHITE,
+        )
+
+        back_to_login_button = ft.TextButton(
+            text="Back to Login",
+            on_click=back_to_login,
+        )
+
+        
+
+        page.add(
+            ft.Column(
+                [
+                    ft.Text("Create an Account", size=24, weight=ft.FontWeight.BOLD),
+                    username_register,
+                    password_register,
+                    register_button,
+                    back_to_login_button,
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=10,
+            )
+        )
+
+    def register_form():
+        login_page_content()  # Clear login page content
+        register_page_content()
 
     login_page_content()
 
