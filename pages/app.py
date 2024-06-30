@@ -3,22 +3,49 @@ import json
 
 # Global variable to store logged-in user
 current_user = None
-
-
+current_chat_room = None  # To store the current chat room
 
 def main(page: ft.Page):
+    global chat_room, message_input, send_button, chat_room_messages
+
     page.title = "Login Screen"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
+    chat_room_messages = []  # Initialize chat room messages list
+
     def open_chat(profile):
-        page.snack_bar = ft.SnackBar(
-            ft.Text(f"Opening chat with {profile['name']}"),
-            bgcolor=ft.colors.GREEN,
-        )
-        page.snack_bar.open = True
+        global current_chat_room  # Use global to modify global variable
+
+        if current_chat_room != profile["name"]:
+            current_chat_room = profile["name"]
+            chat_room_messages.clear()  # Clear previous messages
+
+            page.snack_bar = ft.SnackBar(
+                ft.Text(f"Opening chat with {profile['name']}"),
+                bgcolor=ft.colors.GREEN,
+            )
+            page.snack_bar.open = True
+            page.update()
+            update_chat_room(profile["name"])  # Update chat room with new room name
+
+    def update_chat_room(room_name):
+        chat_room.content = ft.Column([
+            ft.Text(f"Chat Room: {room_name}", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD)),
+            ft.Column(chat_room_messages, expand=True),
+            ft.Row(
+                [
+                    message_input,
+                    send_button
+                ],
+                alignment=ft.MainAxisAlignment.END,
+                spacing=10
+            )
+        ])
         page.update()
 
     def main_page_content():
+        global chat_room, message_input, send_button  # Define these variables globally
+
         page.clean()
         page.title = "ConvoHub"
         page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -55,8 +82,6 @@ def main(page: ft.Page):
             on_click=lambda e: print("Create New Group Clicked")
         )
 
-        chat_room_messages = []
-
         def send_message(e):
             message = message_input.value
             if message:
@@ -76,18 +101,6 @@ def main(page: ft.Page):
         )
 
         chat_room = ft.Container(
-            content=ft.Column([
-                ft.Text("Chat Room", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD)),
-                ft.Column(chat_room_messages, expand=True),
-                ft.Row(
-                    [
-                        message_input,
-                        send_button
-                    ],
-                    alignment=ft.MainAxisAlignment.END,
-                    spacing=10
-                )
-            ]),
             expand=True
         )
 
