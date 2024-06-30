@@ -5,6 +5,14 @@ def main(page: ft.Page):
     page.title = "Login Screen"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
+    def open_chat(profile):
+        page.snack_bar = ft.SnackBar(
+            ft.Text(f"Opening chat with {profile['name']}"),
+            bgcolor=ft.colors.GREEN,
+        )
+        page.snack_bar.open = True
+        page.update()
+
     def main_page_content():
         page.clean()
         page.title = "ConvoHub"
@@ -31,18 +39,65 @@ def main(page: ft.Page):
                         radius=20
                     ),
                     title=ft.Text(msg["name"], weight=ft.FontWeight.BOLD),
-                    height=70
+                    height=70,
+                    on_click=lambda e, msg=msg: open_chat(msg)  # Make each profile clickable
                 )
             )
 
+        create_group_button = ft.ElevatedButton(
+            text="Create New Group",
+            icon=ft.icons.GROUP_ADD,
+            on_click=lambda e: print("Create New Group Clicked")
+        )
+
+        chat_room_messages = []
+
+        def send_message(e):
+            message = message_input.value
+            if message:
+                chat_room_messages.append(ft.Text(message))
+                message_input.value = ""
+                page.update()
+
+        message_input = ft.TextField(hint_text="Type a message", expand=True, border_color=ft.colors.WHITE)
+        send_button = ft.ElevatedButton(text="Send", on_click=send_message)
+
+        chat_room = ft.Container(
+            content=ft.Column([
+                ft.Text("Chat Room", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD)),
+                ft.Column(chat_room_messages, expand=True),
+                ft.Row(
+                    [
+                        message_input,
+                        send_button
+                    ],
+                    alignment=ft.MainAxisAlignment.END,
+                    spacing=10
+                )
+            ]),
+            expand=True
+        )
+
         page.add(
-            ft.Column(
+            ft.Row(
                 [
-                    ft.Row([ft.Text("ConvoHub.", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD))]),
-                    ft.Column(message_list, spacing=10, width=350),
+                    ft.Column(
+                        [
+                            ft.Row([ft.Text("ConvoHub.", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD))]),
+                            ft.Row([create_group_button]),
+                            ft.Column(message_list, spacing=10, width=350),
+                        ],
+                        spacing=20,
+                        alignment=ft.MainAxisAlignment.START
+                    ),
+                    ft.Container(
+                        width=1,
+                        bgcolor=ft.colors.GREY,
+                        # expand=True
+                    ),
+                    chat_room
                 ],
-                spacing=20,
-                alignment=ft.MainAxisAlignment.START
+                expand=True
             )
         )
 
@@ -127,7 +182,6 @@ def main(page: ft.Page):
             )
         )
 
-    # Start with the login page
     login_page_content()
 
 ft.app(target=main)
