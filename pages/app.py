@@ -1,6 +1,11 @@
 import flet as ft
 import json
 
+# Global variable to store logged-in user
+current_user = None
+
+
+
 def main(page: ft.Page):
     page.title = "Login Screen"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -62,6 +67,14 @@ def main(page: ft.Page):
         message_input = ft.TextField(hint_text="Type a message", expand=True, border_color=ft.colors.WHITE)
         send_button = ft.ElevatedButton(text="Send", on_click=send_message)
 
+        logout_button = ft.ElevatedButton(
+            text="Logout",
+            on_click=logout,
+            bgcolor=ft.colors.RED,
+            color=ft.colors.WHITE,
+            width=100,
+        )
+
         chat_room = ft.Container(
             content=ft.Column([
                 ft.Text("Chat Room", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD)),
@@ -93,13 +106,24 @@ def main(page: ft.Page):
                     ft.Container(
                         width=1,
                         bgcolor=ft.colors.GREY,
-                        # expand=True
+                        height="100%",  # Set height to fill available space
                     ),
-                    chat_room
+                    ft.Column(
+                        [
+                            ft.Row([logout_button], alignment=ft.MainAxisAlignment.END),
+                            chat_room
+                        ],
+                        expand=True
+                    )
                 ],
                 expand=True
             )
         )
+
+    def logout(e):
+        global current_user  # Use global to modify global variable
+        current_user = None
+        login_page_content()
 
     def login_page_content():
         page.clean()
@@ -108,6 +132,7 @@ def main(page: ft.Page):
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
         def on_login(e):
+            global current_user  # Use global to modify global variable
             username = username_field.value
             password = password_field.value
 
@@ -128,6 +153,7 @@ def main(page: ft.Page):
             # Check the provided credentials
             if username in data and data[username] == password:
                 print("Login Successful")
+                current_user = username
                 main_page_content()  # Switch to main page content
             else:
                 print("Username or Password Incorrect")
@@ -138,7 +164,7 @@ def main(page: ft.Page):
                 page.snack_bar.open = True
                 page.update()
 
-        username_field = ft.TextField(label="username", hint_text="username.example.com", width=300)
+        username_field = ft.TextField(label="Username", hint_text="username", width=300)
         password_field = ft.TextField(label="Password", password=True, width=300)
 
         login_button = ft.ElevatedButton(
