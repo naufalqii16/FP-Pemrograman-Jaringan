@@ -1,6 +1,6 @@
 import flet as ft
 
-def main(page: ft.Page):
+def main_page(page: ft.Page):
     page.title = "ConvoHub"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.padding = 20
@@ -68,4 +68,4 @@ def main(page: ft.Page):
         )
     )
 
-ft.app(target=main)
+ft.app(target=main_page)

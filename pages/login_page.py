@@ -1,16 +1,47 @@
-
 import flet as ft
+import json
+import os
 
-def main(page: ft.Page):
+def loginpage(page: ft.Page):
     page.title = "Login Screen"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
     def on_login(e):
-        # Handle the login action
         username = username_field.value
         password = password_field.value
-        print(f"username: {username}, Password: {password}")
+
+        # Read the JSON file with user data
+        try:
+            with open('db/user.json', 'r') as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            print("User database not found.")
+            page.snack_bar = ft.SnackBar(
+                ft.Text("User database not found.", color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED,
+            )
+            page.snack_bar.open = True
+            page.update()
+            return
+
+        # Check the provided credentials
+        if username in data and data[username] == password:
+            print("Login Successful")
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Login Successful", color=ft.colors.WHITE),
+                bgcolor=ft.colors.GREEN,
+            )
+            
+            # Set session or perform any post-login actions here
+        else:
+            print("Username or Password Incorrect")
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Username or Password Incorrect", color=ft.colors.WHITE),
+                bgcolor=ft.colors.RED,
+            )
+        page.snack_bar.open = True
+        page.update()
 
     username_field = ft.TextField(label="username", hint_text="username.example.com", width=300)
     password_field = ft.TextField(label="Password", password=True, width=300)
@@ -56,4 +87,4 @@ def main(page: ft.Page):
         )
     )
 
-ft.app(target=main)
+ft.app(target=loginpage)
