@@ -1,3 +1,4 @@
+from datetime import datetime
 import flet as ft
 import json
 
@@ -26,18 +27,61 @@ def main(page: ft.Page):
             )
             page.snack_bar.open = True
             page.update()
-            update_chat_room(profile["username"])  # Update chat room with new room name
+            update_chat_room(profile["username"])
 
+            with open('../db/private_message_lol.json', 'r') as f:
+                private_messages = json.load(f)
+
+            chat = []
+            for message in private_messages["data"]:
+                if (message["sender"] == current_user and message["receiver"] == current_chat_room) or (message["sender"] == current_chat_room and message["receiver"] == current_user):
+                    chat.append(message)
+
+            # Display Chat
+            if chat:
+                for message in chat:    
+                    if message["sender"] == current_user:
+                        chat_room_messages.append(
+                            ft.Container(
+                                ft.Text(message["message"], style=ft.TextStyle(color=ft.colors.WHITE)),
+                                bgcolor=ft.colors.BLUE,
+                                padding=10,
+                                border_radius=10,
+                                margin=5,
+                                alignment=ft.alignment.center_right,
+                                width="fit"
+                            )
+                        )
+                    else:
+                        chat_room_messages.append(
+                            ft.Container(
+                                ft.Text(message["message"], style=ft.TextStyle(color=ft.colors.BLUE)),
+                                bgcolor=ft.colors.WHITE,
+                                padding=10,
+                                border_radius=10,
+                                margin=5,
+                                alignment=ft.alignment.center_left,
+                                width="fit"
+                            )
+                        )
+                    page.update()
+    
     def update_chat_room(room_name):
         chat_room.content = ft.Column([
             ft.Text(f"Chat Room: {room_name}", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD)),
-            ft.Column(chat_room_messages, expand=True),
+            ft.Container(
+                content=ft.ListView(
+                    chat_room_messages,
+                    # expand=True
+                ),
+                expand=True,
+            ),
             ft.Row(
                 [
                     message_input,
                     send_button
                 ],
-                alignment=ft.MainAxisAlignment.END,
+                alignment=ft.MainAxisAlignment.START,
                 spacing=10
             )
         ])
@@ -76,18 +120,98 @@ def main(page: ft.Page):
                     )
                 )
 
+        def show_create_group_dialog(e):
+            group_name_field = ft.TextField(label="Group Name", hint_text="Enter group name")
+            error_message = ft.Text(value="", color=ft.colors.RED, max_lines=2)
+
+            def create_group(e):
+                group_name = group_name_field.value.strip()
+
+                # Read existing groups from group.json
+                try:
+                    with open('../db/group.json', 'r') as f:
+                        group_data = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    group_data = {"data": []}
+
+                # Check for empty group name
+                if not group_name:
+                    error_message.value = "Group name cannot be empty."
+                    page.update()
+                    return
+
+                # Check for duplicate group name
+                for group in group_data["data"]:
+                    if group["group_name"].lower() == group_name.lower():
+                        error_message.value = "Group name already exists. Please choose a different name."
+                        page.update()
+                        return
+
+                # Add new group to JSON data
+                group_data["data"].append({"group_name": group_name})
+
+                # Write back to the JSON file
+                with open('../db/group.json', 'w') as f:
+                    json.dump(group_data, f, indent=4)
+
+                dialog.open = False  # Close the dialog
+                page.update()
+
+            def cancel_create_group(e):
+                dialog.open = False
+                page.update()
+
+            dialog = ft.AlertDialog(
+                title=ft.Text("Create New Group"),
+                content=ft.Container(
+                    content=ft.Column([group_name_field, error_message], spacing=10),
+                    padding=ft.padding.all(10),
+                    width=300,
+                    height=150
+                ),
+                actions=[
+                    ft.ElevatedButton(text="Create", on_click=create_group),
+                    ft.TextButton(text="Cancel", on_click=cancel_create_group)
+                ]
+            )
+            page.dialog = dialog
+            dialog.open = True
+            page.update()
+
         create_group_button = ft.ElevatedButton(
             text="Create New Group",
             icon=ft.icons.GROUP_ADD,
-            on_click=lambda e: print("Create New Group Clicked")
+            on_click=show_create_group_dialog
         )
-
+        
         def send_message(e):
             message = message_input.value
             if message:
                 chat_room_messages.append(ft.Text(message))
                 message_input.value = ""
                 page.update()
+
+                # Read existing messages or initialize if file doesn't exist
+                try:
+                    with open('../db/private_message.json', 'r') as f:
+                        messages_data = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    messages_data = {"data": []}
+
+                # Append the new message
+                new_message = {
+                    "sender": current_user,
+                    "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                    "receiver": current_chat_room,
+                    "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                    "message": message,
+                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                }
+                messages_data["data"].append(new_message)
+
+                # Write back to the JSON file
+                with open('../db/private_message_lol.json', 'w') as f:
+                    json.dump(messages_data, f, indent=4)
 
         message_input = ft.TextField(hint_text="Type a message", expand=True, border_color=ft.colors.WHITE)
         send_button = ft.ElevatedButton(text="Send", on_click=send_message)
