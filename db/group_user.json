@@ -1,15 +1,19 @@
 {
     "data": [
         {
-            "group_name": "grup_jarkom",
-            "users": [
-                {
-                    "username": "bepe"
-                },
-                {
-                    "username": "gibran"
-                }
-            ]
+            "username": "gibran",
+            "groupname": "schematics",
+            "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0"
+        },
+        {
+            "username": "bepe",
+            "groupname": "HMTC",
+            "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0"
+        },
+        {
+            "username": "gibran",
+            "groupname": "grup-jarkom",
+            "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0"
         }
     ]
 }

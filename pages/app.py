@@ -120,6 +120,29 @@ def main(page: ft.Page):
                     )
                 )
 
+        # Load groups
+        with open('../db/group_user.json', 'r') as f:
+            group_users = json.load(f)
+
+        user_groups = [group["groupname"] for group in group_users["data"] if group["username"] == current_user]
+
+        for group_name in user_groups:
+            message_list.append(
+                ft.ListTile(
+                    leading=ft.CircleAvatar(
+                        content=ft.Text(
+                            group_name[0],
+                            style=ft.TextStyle(color=ft.colors.WHITE, size=20)
+                        ),
+                        bgcolor=ft.colors.PURPLE,
+                        radius=20
+                    ),
+                    title=ft.Text(group_name, weight=ft.FontWeight.BOLD),
+                    height=70,
+                    on_click=lambda e, group_name=group_name: open_chat({"username": group_name})  # Make each group clickable
+                )
+            )
+
         def show_create_group_dialog(e):
             group_name_field = ft.TextField(label="Group Name", hint_text="Enter group name")
             error_message = ft.Text(value="", color=ft.colors.RED, max_lines=2)
@@ -153,6 +176,27 @@ def main(page: ft.Page):
                 # Write back to the JSON file
                 with open('../db/group.json', 'w') as f:
                     json.dump(group_data, f, indent=4)
+
+                # Add new group_user data
+                group_user_entry = {
+                    "username": current_user,
+                    "groupname": group_name,
+                    "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0"
+                }
+
+                # Read existing group_user data from group_user.json
+                try:
+                    with open('../db/group_user.json', 'r') as f:
+                        group_user_data = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    group_user_data = {"data": []}
+
+                # Add new entry to group_user data
+                group_user_data["data"].append(group_user_entry)
+
+                # Write back to the JSON file
+                with open('../db/group_user.json', 'w') as f:
+                    json.dump(group_user_data, f, indent=4)
 
                 dialog.open = False  # Close the dialog
                 page.update()

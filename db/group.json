@@ -1,16 +1,13 @@
 {
     "data": [
         {
-            "group_name": "grup_jarkom"
-        },
-        {
             "group_name": "schematics"
         },
         {
             "group_name": "HMTC"
         },
         {
-            "group_name": "pecinta kucing"
+            "group_name": "grup-jarkom"
         }
     ]
 }
