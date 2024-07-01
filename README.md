@@ -18,12 +18,12 @@
 
 | Nama  | NRP | Tugas |
 | ------------- | ------------- | ------------- |
-| Andika Laksana Putra  | 5025211001  | Content Cell  |
-| M Naufal Baihaqi  | 5025211103  | Content Cell  |
-| Dewangga Dika Darmawan  | 502521109  | Content Cell  |
-| Kalyana Putri Al Kanza  | 5025211137  | Content Cell  |
-| Akmal Ariq Ramadhan  | 5025211188  | Content Cell  |
-| Alfa Fakhrur Rizal Zaini  | 5025211214  | Content Cell  |
+| Andika Laksana Putra  | 5025211001  | Backend  |
+| M Naufal Baihaqi  | 5025211103  | Frontend  |
+| Dewangga Dika Darmawan  | 502521109  | Frontend  |
+| Kalyana Putri Al Kanza  | 5025211137  | Documentation, Integration  |
+| Akmal Ariq Ramadhan  | 5025211188  | Documentation, Integration  |
+| Alfa Fakhrur Rizal Zaini  | 5025211214  | Backend  |
 
 .55
 ## Panduan Menjalankan Program
@@ -97,15 +97,13 @@ Format pesan yang dikirim ke server untuk mengambil pesan pribadi adalah:
 inbox 
 ```
 
-### Group Messaging
+### **_Group Messaging_**
 
-#### Pembuatan Grup
+- #### **Pembuatan Grup (_Create Group_)**
 
-Grup baru dapat dibuat dengan menggunakan perintah `creategroup`.
+Grup baru dapat dibuat dengan menggunakan perintah `creategroup`. Protokol yang digunakan untuk membuat grup adalah:
 
-Protokol untuk membuat grup mencakup:
-
-- groupname: Nama grup yang akan dibuat.
+- _groupname_: Nama grup yang akan dibuat.
 
 Format pesan yang dikirim ke server untuk membuat grup adalah:
 
@@ -113,14 +111,12 @@ Format pesan yang dikirim ke server untuk membuat grup adalah:
 creategroup {groupname} 
 ```
 
-#### Bergabung ke Grup
+- #### **Bergabung ke Grup (_Join Group_)**
 
-Pengguna dapat bergabung ke grup dengan menggunakan perintah `joingroup`.
-
-Protokol untuk bergabung ke grup mencakup:
+Pengguna dapat bergabung ke grup dengan menggunakan perintah `joingroup` dan menggunakan Protokol sebagai berikut:
 
 <!-- - username: Nama pengguna yang bergabung. -->
-- groupname: Nama grup yang akan diikuti.
+- _groupname_: Nama grup yang akan diikuti.
 <!-- - realmid: ID realm di mana grup berada. -->
 
 Format pesan yang dikirim ke server untuk bergabung ke grup adalah:
@@ -129,15 +125,12 @@ Format pesan yang dikirim ke server untuk bergabung ke grup adalah:
 joingroup {groupname}
 ```
 
-#### Pengiriman Pesan Grup
+- #### **Pengiriman Pesan Grup (_Send Group Messages_)**
 
-Pesan grup dikirim dengan menggunakan perintah `sendgroup`.
+Pesan grup dikirim dengan menggunakan perintah `sendgroup`. Protokol yang digunakan untuk mengirim pesan grup adalah sebagai berikut:
 
-Protokol untuk mengirim pesan grup mencakup:
-
-<!-- - usernamefrom: Nama pengguna yang mengirim pesan. -->
-- groupto: Nama grup yang akan menerima pesan.
-- message: Isi pesan yang dikirim.
+- _groupto_: Nama grup yang akan menerima pesan.
+- _message_: Isi pesan yang dikirim.
 
 Format pesan yang dikirim ke server adalah:
 
@@ -145,14 +138,11 @@ Format pesan yang dikirim ke server adalah:
 sendgroup {groupto} {message} 
 ```
 
-#### Penerimaan Pesan Grup
+- #### **Penerimaan Pesan Grup (_Receive Group Messages_)**
 
-Pengguna dapat mengambil pesan grup dengan menggunakan perintah `inboxgroup`.
+Pengguna dapat mengambil pesan grup dengan menggunakan perintah `inboxgroup`. Protokol yang digunakan untuk 
 
-Protokol untuk mengambil pesan grup mencakup:
-
-<!-- - username: Nama pengguna yang meminta pesan. -->
-- groupname: Nama grup dari mana pesan diambil.
+- _groupname_: Nama grup dari mana pesan diambil.
 
 Format pesan yang dikirim ke server untuk mengambil pesan grup adalah:
 
@@ -160,18 +150,29 @@ Format pesan yang dikirim ke server untuk mengambil pesan grup adalah:
 inboxgroup {groupname} 
 ```
 
-### Send and Receive File
+### **File**
 Pengguna dapat mengirim dan menerima file dengan menggunakan perintah `adios`. Format pesan yang dikirim ke server untuk mengirim dan menerima file adalah sebagai berikut:
 
-- **Send file**--
-```shell
-sendfile {usernameto} {PATH FILE} 
-``` 
+- #### **Mengirim File (_Send File_)**
 
-- **Receive file**
+Pengguna dapat mengirim file ke private message menggunakan perintah `sendfile` dan menggunakan Protokol sebagai berikut:
+
+Format pesan yang dikirim ke server untuk bergabung ke grup adalah:
+
+```shell
+sendfile {usernameto} {PATH}
+```
+
+- #### **Menerima File (_Receive File_)**
+
+Pengguna dapat mengirim file ke private message menggunakan perintah `receivefile` dan menggunakan Protokol sebagai berikut:
+
+Format pesan yang dikirim ke server untuk bergabung ke grup adalah:
+
 ```shell
 receivefile
 ``` 
+
 
 ## Definisi Protokol Pertukaran Antar Server
 Pada arsitektur chat multi realm kami, terdapat 1 server utama yang menjadi

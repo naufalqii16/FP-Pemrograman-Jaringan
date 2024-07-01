@@ -2,14 +2,19 @@ from datetime import datetime
 import flet as ft
 import json
 import os
+from chatcli import ChatClient  # Import ChatClient
 
 # Global variable to store logged-in user
 current_user = None
 current_chat_room = None  # To store the current chat room
 current_group_chat = None  # To store the current group chat
 current_chat_file = None
+chat_temp = []
+token_id = None
 
 def main(page: ft.Page):
+    chatService = ChatClient()  # Initialize ChatClient
+
     global chat_room, message_input, send_button, chat_room_messages
 
     page.title = "Login Screen"
@@ -19,8 +24,6 @@ def main(page: ft.Page):
     
     def open_chat_option(profile):
         global current_chat_room
-
-        
 
         def close_dialog(e):
             dialog.open = False
@@ -37,7 +40,7 @@ def main(page: ft.Page):
         dialog = ft.AlertDialog(
             title=ft.Text("Open Chat Option"),
             content=ft.Column([
-                ft.Text(f"Profile: {profile['username']}"),
+                ft.Text(f"Profile: {profile}"),
                 ft.TextButton(text="Open Chat", on_click=lambda e: open_chat_and_close_dialog(profile)),
                 ft.TextButton(text="Open Chat File", on_click=lambda e: open_chat_file_and_close_dialog(profile)),
             ]),
@@ -47,39 +50,40 @@ def main(page: ft.Page):
         dialog.open = True
         page.update()
         
-        
-        # dialog.actions[0].on_click = close_dialog
-
     def open_chat(profile):
         global current_chat_room
         global current_group_chat  # Use global to modify global variable
         global current_chat_file
+        global chat_temp
 
-        if current_chat_room != profile["username"]:
-            current_chat_room = profile["username"]
+        if current_chat_room != profile:
+            current_chat_room = profile
             current_group_chat = None  # Reset group chat
             current_chat_file = None
+            chat_temp = []  # Reset chat_temp
             chat_room_messages.clear()  # Clear previous messages
 
             page.snack_bar = ft.SnackBar(
-                ft.Text(f"Opening chat with {profile['username']}"),
+                ft.Text(f"Opening chat with {profile}"),
                 bgcolor=ft.colors.GREEN,
             )
             page.snack_bar.open = True
             page.update()
-            update_chat_room(profile["username"])
+            update_chat_room(profile)
 
-            with open('../db/private_message.json', 'r') as f:
-                private_messages = json.load(f)
+            # Fetch private messages using ChatClient
+            chat = chatService.inbox(current_chat_room)  # Adjust this according to your API
+            # for message in chat["messages"]:
+            #     if (message["sender"] == current_user and message["receiver"] == current_chat_room) or (message["sender"] == current_chat_room and message["receiver"] == current_user):
+            #         chat_temp.append(message)
 
-            chat = []
-            for message in private_messages["data"]:
-                if (message["sender"] == current_user and message["receiver"] == current_chat_room) or (message["sender"] == current_chat_room and message["receiver"] == current_user):
-                    chat.append(message)
+            print("CHAT TEMP:", chat_temp)
+            print("chat['messages']:", chat["messages"])
+            print("current user:", current_user)
 
             # Display Chat
             if chat:
-                for message in chat:    
+                for message in chat['messages']:  # Iterate over chat_temp instead of chat['messages']
                     if message["sender"] == current_user:
                         chat_room_messages.append(
                             ft.Container(
@@ -92,7 +96,7 @@ def main(page: ft.Page):
                                 width="fit"
                             )
                         )
-                    else:
+                    elif message["sender"] == current_chat_room:
                         chat_room_messages.append(
                             ft.Container(
                                 ft.Text(message["message"], style=ft.TextStyle(color=ft.colors.BLUE)),
@@ -112,50 +116,50 @@ def main(page: ft.Page):
         global current_chat_file
 
         file_name = []
-        directory = 'asset'  # Specify the directory path
+        directory = 'file_receive'  # Specify the directory path
 
+        file_name = []
         for filename in os.listdir(directory):
             file_name.append(filename)
-        
-        # print(file_name)
 
-        if current_chat_file != profile["username"]:
-            current_chat_file = profile["username"]
+        if current_chat_file != profile:
+            current_chat_file = profile
             current_group_chat = None  # Reset group chat
             current_chat_room = None
             chat_room_messages.clear()  # Clear previous messages
 
             page.snack_bar = ft.SnackBar(
-                ft.Text(f"Opening chat with {profile['username']}"),
+                ft.Text(f"Opening chat with {profile}"),
                 bgcolor=ft.colors.GREEN,
             )
             page.snack_bar.open = True
             page.update()
-            update_chat_room(profile["username"])
+            update_chat_room(profile)
 
-            with open('../db/file_message.json', 'r') as f:
-                private_messages = json.load(f)
+            # Fetch file messages using ChatClient
+            chat = chatService.receivefile(current_chat_file)  # Adjust this according to your API
 
-            chat = []
-            for message in private_messages["data"]:
-                if (message["sender"] == current_user and message["receiver"] == current_chat_file) or (message["sender"] == current_chat_file and message["receiver"] == current_user):
-                    chat.append(message)
+            # print("CHAT TEMP:", chat)
+            print("CUREEEENT:", current_chat_file)
 
-            # Decode file if doesn't exist
+            # Check if all senders and receivers have files in the directory
             if chat:
-                for message in chat:
-                    if message["message"] not in file_name:
-                        # Decode Here
+                for message in chat['content']:
+                    sender = message['sender']
+                    receiver = message['receiver']
+                    if sender not in file_name or receiver not in file_name:
+                        # Handle missing files here
                         pass
-            
+
             # Display Chat
             if chat:
-                for message in chat:
+                for message in chat['content']:
                     if message["sender"] == current_user:
                         chat_room_messages.append(
                             ft.Container(
                                 ft.Image(
-                                    src=f'asset/{message["message"]}',
+                                    src=f'D:\\Vscode\\Semester 6\\Progjar\\fp-pemrograman-jaringan\\file_receive\\{message['sender']}\\{message["file_name"]}',
+                                    # src=f'./file_receive/{message["sender"]}/{message["file_name"]}',
                                     width=200,
                                     height=200,
                                 ),
@@ -166,7 +170,8 @@ def main(page: ft.Page):
                         chat_room_messages.append(
                             ft.Container(
                                 ft.Image(
-                                    src=f'asset/{message["message"]}',
+                                    src=f'D:\\Vscode\\Semester 6\\Progjar\\fp-pemrograman-jaringan\\file_receive\\{message['receiver']}\\{message["file_name"]}',
+                                    # src=f'./file_receive/{message["sender"]}/{message["file_name"]}',
                                     width=200,
                                     height=200,
                                 ),
@@ -194,19 +199,11 @@ def main(page: ft.Page):
             page.update()
             update_chat_room(group_name)
 
-            with open('../db/group_message.json', 'r') as f:
-                group_messages = json.load(f)
-
-            chat = []
-            for message in group_messages["data"]:
-                if message["receiver_group"] == current_group_chat:
-                    chat.append(message)
-            
-            # print(chat)
+            chat_group = chatService.inbox_group(current_group_chat)  # Adjust this according to your API
 
             # Display Chat
-            if chat:
-                for message in chat:    
+            if chat_group:
+                for message in chat_group['messages']:  # Iterate over chat_temp instead of chat['messages']
                     if message["sender"] == current_user:
                         chat_room_messages.append(
                             ft.Container(
@@ -219,10 +216,13 @@ def main(page: ft.Page):
                                 width="fit"
                             )
                         )
-                    else:
+                    elif message["sender"] != current_user:
                         chat_room_messages.append(
                             ft.Container(
-                                ft.Text(message["message"], style=ft.TextStyle(color=ft.colors.BLUE)),
+                                ft.Column([
+                                    ft.Text(message["sender"], style=ft.TextStyle(color=ft.colors.RED)),
+                                    ft.Text(message["message"], style=ft.TextStyle(color=ft.colors.BLUE)),
+                                ]),
                                 bgcolor=ft.colors.WHITE,
                                 padding=10,
                                 border_radius=10,
@@ -263,50 +263,56 @@ def main(page: ft.Page):
         page.vertical_alignment = ft.MainAxisAlignment.START
         page.padding = 20
 
-        with open('../db/user.json', 'r') as f:
-            data = json.load(f)
+        # Fetch users from the server using ChatClient
+        data = chatService.getallusers()  # Adjust this according to your API
 
-        messages = data["data"]
-
+        if data["status"] == "OK":
+            users = data["users"]
+        else:
+            users = []  # Replace this with a call to fetch users from the server
+        
+        # message_list = chatService.inbox()  # Adjust this according to your API
         message_list = []
-        for msg in messages:
-            if msg["username"] != current_user:  # Exclude current user's profile
+
+        for msg in users:
+            if msg != current_user:  # Exclude current user's profile
                 message_list.append(
                     ft.ListTile(
                         leading=ft.CircleAvatar(
                             content=ft.Text(
-                                msg["username"][0],
+                                msg[0],
                                 style=ft.TextStyle(color=ft.colors.WHITE, size=20)
                             ),
                             bgcolor=ft.colors.PURPLE,
                             radius=20
                         ),
-                        title=ft.Text(msg["username"], weight=ft.FontWeight.BOLD),
+                        title=ft.Text(msg, weight=ft.FontWeight.BOLD),
                         height=70,
                         on_click=lambda e, msg=msg: open_chat_option(msg)  # Make each profile clickable
                     )
                 )
 
-        # Load groups
-        with open('../db/group_user.json', 'r') as f:
-            group_users = json.load(f)
-
-        user_groups = [group["groupname"] for group in group_users["data"] if group["username"] == current_user]
-
-        for group_name in user_groups:
+        # Fetch groups from the server using ChatClient
+        user_groups = chatService.get_groups()  # Adjust this according to your API 
+        # user_groups = user_groups['groups']
+        print("USER GROUPS:", user_groups)
+        group_temp = user_groups['groups']
+    
+        for group_name in group_temp:
             message_list.append(
                 ft.ListTile(
                     leading=ft.CircleAvatar(
                         content=ft.Text(
-                            group_name[0],
+                            # print(group_name['groupname']),
+                            group_name['groupname'][0:2],
                             style=ft.TextStyle(color=ft.colors.WHITE, size=20)
                         ),
                         bgcolor=ft.colors.PURPLE,
                         radius=20
                     ),
-                    title=ft.Text(group_name, weight=ft.FontWeight.BOLD),
+                    title=ft.Text(group_name['groupname'], weight=ft.FontWeight.BOLD),
                     height=70,
-                    on_click=lambda e, group_name=group_name: open_group_chat(group_name)  # Make each group clickable
+                    on_click=lambda e, group_name=group_name['groupname']: open_group_chat(group_name)  # Make each group clickable
                 )
             )
 
@@ -316,57 +322,14 @@ def main(page: ft.Page):
 
             def create_group(e):
                 group_name = group_name_field.value.strip()
+                result = chatService.create_group(group_name)  # Call ChatClient to create group
 
-                # Read existing groups from group.json
-                try:
-                    with open('../db/group.json', 'r') as f:
-                        group_data = json.load(f)
-                except (FileNotFoundError, json.JSONDecodeError):
-                    group_data = {"data": []}
-
-                # Check for empty group name
-                if not group_name:
-                    error_message.value = "Group name cannot be empty."
+                if "successfully created" in result:
+                    dialog.open = False  # Close the dialog
                     page.update()
-                    return
-
-                # Check for duplicate group name
-                for group in group_data["data"]:
-                    if group["group_name"].lower() == group_name.lower():
-                        error_message.value = "Group name already exists. Please choose a different name."
-                        page.update()
-                        return
-
-                # Add new group to JSON data
-                group_data["data"].append({"group_name": group_name})
-
-                # Write back to the JSON file
-                with open('../db/group.json', 'w') as f:
-                    json.dump(group_data, f, indent=4)
-
-                # Add new group_user data
-                group_user_entry = {
-                    "username": current_user,
-                    "groupname": group_name,
-                    "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0"
-                }
-
-                # Read existing group_user data from group_user.json
-                try:
-                    with open('../db/group_user.json', 'r') as f:
-                        group_user_data = json.load(f)
-                except (FileNotFoundError, json.JSONDecodeError):
-                    group_user_data = {"data": []}
-
-                # Add new entry to group_user data
-                group_user_data["data"].append(group_user_entry)
-
-                # Write back to the JSON file
-                with open('../db/group_user.json', 'w') as f:
-                    json.dump(group_user_data, f, indent=4)
-
-                dialog.open = False  # Close the dialog
-                page.update()
+                else:
+                    error_message.value = result  # Show error message
+                    page.update()
 
             def cancel_create_group(e):
                 dialog.open = False
@@ -395,56 +358,14 @@ def main(page: ft.Page):
 
             def join_group(e):
                 group_name = group_name_field.value.strip()
+                result = chatService.join_group(group_name)  # Call ChatClient to join group
 
-                # Read existing groups from group.json
-                try:
-                    with open('../db/group.json', 'r') as f:
-                        group_data = json.load(f)
-                except (FileNotFoundError, json.JSONDecodeError):
-                    group_data = {"data": []}
-
-                # Check if group exists
-                group_exists = False
-                for group in group_data["data"]:
-                    if group["group_name"].lower() == group_name.lower():
-                        group_exists = True
-                        break
-
-                if not group_exists:
-                    error_message.value = "Group does not exist. Please check the group name."
+                if "successfully joined" in result:
+                    dialog.open = False  # Close the dialog
                     page.update()
-                    return
-
-                # Read existing group_user data from group_user.json
-                try:
-                    with open('../db/group_user.json', 'r') as f:
-                        group_user_data = json.load(f)
-                except (FileNotFoundError, json.JSONDecodeError):
-                    group_user_data = {"data": []}
-
-                # Check if user is already a member of the group
-                for group_user in group_user_data["data"]:
-                    if group_user["username"] == current_user and group_user["groupname"].lower() == group_name.lower():
-                        error_message.value = "You are already a member of this group."
-                        page.update()
-                        return
-
-                # Add new group_user data
-                group_user_entry = {
-                    "username": current_user,
-                    "groupname": group_name,
-                    "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0"
-                }
-
-                # Add new entry to group_user data
-                group_user_data["data"].append(group_user_entry)
-
-                # Write back to the JSON file
-                with open('../db/group_user.json', 'w') as f:
-                    json.dump(group_user_data, f, indent=4)
-
-                dialog.open = False  # Close the dialog
-                page.update()
+                else:
+                    error_message.value = result  # Show error message
+                    page.update()
 
             def cancel_join_group(e):
                 dialog.open = False
@@ -488,69 +409,20 @@ def main(page: ft.Page):
 
                 if current_chat_room:
                     if message.endswith('.jpeg') or message.endswith('.jpg') or message.endswith('.png'):
-                        # Read existing private messages or initialize if file doesn't exist
-                        try:
-                            with open('../db/file_message.json', 'r') as f:
-                                private_messages_data = json.load(f)
-                        except (FileNotFoundError, json.JSONDecodeError):
-                            private_messages_data = {"data": []}
-
-                        # Append the new message
-                        new_message = {
-                            "sender": current_user,
-                            "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                            "receiver": current_chat_room,
-                            "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                            "message": message,
-                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                        }
-                        private_messages_data["data"].append(new_message)
-
-                        # Write back to the JSON file
-                        with open('../db/file_message.json', 'w') as f:
-                            json.dump(private_messages_data, f, indent=4)
+                        result = chatService.sendfile(current_chat_room, message)  # Call ChatClient to send file
                     else:
-                        try:
-                            with open('../db/private_message.json', 'r') as f:
-                                messages_data = json.load(f)
-                        except (FileNotFoundError, json.JSONDecodeError):
-                            messages_data = {"data": []}
-
-                        new_message = {
-                            "sender": current_user,
-                            "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                            "receiver": current_chat_room,
-                            "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                            "message": message,
-                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                        }
-                        messages_data["data"].append(new_message)
-
-                        with open('../db/private_message.json', 'w') as f:
-                            json.dump(messages_data, f, indent=4)
-                    
+                        result = chatService.sendmessage(current_chat_room, message)  # Call ChatClient to send message
                 elif current_group_chat:
-                    # Read existing group messages or initialize if file doesn't exist
-                    try:
-                        with open('../db/group_message.json', 'r') as f:
-                            group_messages_data = json.load(f)
-                    except (FileNotFoundError, json.JSONDecodeError):
-                        group_messages_data = {"data": []}
+                    result = chatService.sendmessage_group(current_group_chat, message)  # Call ChatClient to send group message
 
-                    # Append the new message
-                    new_message = {
-                        "sender": current_user,
-                        "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                        "receiver_group": current_group_chat,
-                        "message": message,
-                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    }
-                    group_messages_data["data"].append(new_message)
-
-                    # Write back to the JSON file
-                    with open('../db/group_message.json', 'w') as f:
-                        json.dump(group_messages_data, f, indent=4)
-
+                # Handle response from ChatClient
+                if "Error" in result:
+                    page.snack_bar = ft.SnackBar(
+                        ft.Text(result, color=ft.colors.WHITE),
+                        bgcolor=ft.colors.RED,
+                    )
+                    page.snack_bar.open = True
+                    page.update()
 
         message_input = ft.TextField(hint_text="Type a message", expand=True, border_color=ft.colors.WHITE)
         send_button = ft.ElevatedButton(text="Send", on_click=send_message)
@@ -599,7 +471,11 @@ def main(page: ft.Page):
 
     def logout(e):
         global current_user  # Use global to modify global variable
+        global current_chat_room
+        global current_group_chat
+        current_group_chat = None
         current_user = None
+        current_chat_room = None
         login_page_content()
 
     def back_to_login(e):
@@ -613,38 +489,23 @@ def main(page: ft.Page):
 
         def on_login(e):
             global current_user  # Use global to modify global variable
+            global token_id
             username = username_field.value
             password = password_field.value
 
-            # Read the JSON file with user data
-            try:
-                with open('../db/user.json', 'r') as f:
-                    data = json.load(f)
-            except FileNotFoundError:
-                print("User database not found.")
+            result = chatService.login(username, password)  # Call ChatClient to login
+
+            if result['status'] == 'OK':
+                current_user = username
+                token_id = result['token_id']
+                main_page_content()  # Switch to main page content
+            else:
                 page.snack_bar = ft.SnackBar(
-                    ft.Text("User database not found.", color=ft.colors.WHITE),
+                    ft.Text(result, color=ft.colors.WHITE),
                     bgcolor=ft.colors.RED,
                 )
                 page.snack_bar.open = True
                 page.update()
-                return
-
-            # Check the provided credentials
-            for user in data["data"]:
-                if user["username"] == username and user["password"] == password:
-                    print("Login Successful")
-                    current_user = username
-                    main_page_content()  # Switch to main page content
-                    return
-
-            print("Username or Password Incorrect")
-            page.snack_bar = ft.SnackBar(
-                ft.Text("Username or Password Incorrect", color=ft.colors.WHITE),
-                bgcolor=ft.colors.RED,
-            )
-            page.snack_bar.open = True
-            page.update()
 
         def show_register_form(e):
             register_form()
@@ -664,7 +525,6 @@ def main(page: ft.Page):
             text="Sign Up",
             on_click=show_register_form,
         )
-
 
         page.add(
             ft.Column(
@@ -698,45 +558,23 @@ def main(page: ft.Page):
             username = username_register.value
             password = password_register.value
 
-            # Read existing user data or initialize an empty dictionary if the file doesn't exist
-            try:
-                with open('../db/user.json', 'r') as f:
-                    data = json.load(f)
-            except FileNotFoundError:
-                data = {"data": []}
+            result = chatService.register(username, password)  # Call ChatClient to register
 
-            # Check if username already exists
-            for user in data["data"]:
-                if user["username"] == username:
-                    print("Username already exists")
-                    page.snack_bar = ft.SnackBar(
-                        ft.Text("Username already exists", color=ft.colors.WHITE),
-                        bgcolor=ft.colors.RED,
-                    )
-                    page.snack_bar.open = True
-                    page.update()
-                    return
-
-            # Add new user data
-            new_user = {
-                "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                "username": username,
-                "password": password,
-            }
-            data["data"].append(new_user)
-
-            # Write back to the JSON file
-            with open('../db/user.json', 'w') as f:
-                json.dump(data, f, indent=4)
-
-            print("Registration Successful")
-            page.snack_bar = ft.SnackBar(
-                ft.Text("Registration Successful", color=ft.colors.WHITE),
-                bgcolor=ft.colors.GREEN,
-            )
-            page.snack_bar.open = True
-            page.update()
-            login_page_content()  # Switch back to login page after successful registration
+            if result['status'] == 'OK':
+                page.snack_bar = ft.SnackBar(
+                    ft.Text(result, color=ft.colors.WHITE),
+                    bgcolor=ft.colors.GREEN,
+                )
+                page.snack_bar.open = True
+                page.update()
+                login_page_content()  # Switch back to login page after successful registration
+            else:
+                page.snack_bar = ft.SnackBar(
+                    ft.Text(result, color=ft.colors.WHITE),
+                    bgcolor=ft.colors.RED,
+                )
+                page.snack_bar.open = True
+                page.update()
 
         username_register = ft.TextField(label="Username", hint_text="username", width=300)
         password_register = ft.TextField(label="Password", password=True, width=300)
