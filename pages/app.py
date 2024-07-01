@@ -19,7 +19,7 @@ def main(page: ft.Page):
     
     def open_chat_option(profile):
         global current_chat_room
-        global is_chat_file
+
         
 
         def close_dialog(e):
@@ -69,7 +69,7 @@ def main(page: ft.Page):
             page.update()
             update_chat_room(profile["username"])
 
-            with open('../db/private_message_lol.json', 'r') as f:
+            with open('../db/private_message.json', 'r') as f:
                 private_messages = json.load(f)
 
             chat = []
@@ -526,7 +526,7 @@ def main(page: ft.Page):
                         }
                         messages_data["data"].append(new_message)
 
-                        with open('../db/private_message_lol.json', 'w') as f:
+                        with open('../db/private_message.json', 'w') as f:
                             json.dump(messages_data, f, indent=4)
                     
                 elif current_group_chat:
