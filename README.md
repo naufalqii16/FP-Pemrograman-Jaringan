@@ -54,7 +54,7 @@ Protokol untuk autentikasi mencakup:
 Format pesan yang dikirim ke server untuk autentikasi adalah:
 
 ```shell
-auth username:{username} password:{password}
+auth {username} {password}
 ```
 
 #### Pendaftaran Pengguna
@@ -65,12 +65,12 @@ Protokol untuk pendaftaran mencakup:
 
 - username: Nama pengguna yang akan didaftarkan.
 - password: Kata sandi pengguna yang akan didaftarkan.
-- realm_id: ID realm tempat pengguna akan terdaftar.
+<!-- - realm_id: ID realm tempat pengguna akan terdaftar. -->
 
 Format pesan yang dikirim ke server untuk pendaftaran adalah:
 
 ```shell
-register username:{username} password:{password} realm_id
+register {username} {password}
 ```
 
 #### Pengiriman Pesan Pribadi
@@ -79,29 +79,29 @@ Pesan pribadi dikirim dengan menggunakan perintah `sendprivate`.
 
 Protokol untuk mengirim pesan pribadi mencakup:
 
-- sessionid: ID sesi pengguna yang mengirim pesan.
+<!-- - sessionid: ID sesi pengguna yang mengirim pesan. -->
 - usernameto: Nama pengguna yang akan menerima pesan.
-- usernamefrom: Nama pengguna yang mengirim pesan.
+<!-- - usernamefrom: Nama pengguna yang mengirim pesan. -->
 - message: Isi pesan yang dikirim.
 
 Format pesan yang dikirim ke server adalah:
 
 ```
-sendprivate username_from:{usernamefrom} nusername_to:{usernameto} message:{message} 
+sendprivate {usernameto} {message} 
 ```
 
 #### Penerimaan Pesan Pribadi
 
 Pengguna dapat mengambil pesan pribadi dengan menggunakan perintah `inbox`.
-
+<!-- 
 Protokol untuk mengambil pesan pribadi mencakup:
 
-- username: Nama pengguna yang meminta pesan.
+- username: Nama pengguna yang meminta pesan. -->
 
 Format pesan yang dikirim ke server untuk mengambil pesan pribadi adalah:
 
 ```shell
-inbox username:{username} 
+inbox 
 ```
 
 ### Group Messaging
@@ -117,7 +117,7 @@ Protokol untuk membuat grup mencakup:
 Format pesan yang dikirim ke server untuk membuat grup adalah:
 
 ```shell
-creategroup groupname:{groupname} 
+creategroup {groupname} 
 ```
 
 #### Bergabung ke Grup
@@ -126,14 +126,14 @@ Pengguna dapat bergabung ke grup dengan menggunakan perintah `joingroup`.
 
 Protokol untuk bergabung ke grup mencakup:
 
-- username: Nama pengguna yang bergabung.
+<!-- - username: Nama pengguna yang bergabung. -->
 - groupname: Nama grup yang akan diikuti.
-- realmid: ID realm di mana grup berada.
+<!-- - realmid: ID realm di mana grup berada. -->
 
 Format pesan yang dikirim ke server untuk bergabung ke grup adalah:
 
 ```shell
-joingroup username:{username} groupname:{groupname} realm_id:{realmid} 
+joingroup {groupname}
 ```
 
 #### Pengiriman Pesan Grup
@@ -142,14 +142,14 @@ Pesan grup dikirim dengan menggunakan perintah `sendgroup`.
 
 Protokol untuk mengirim pesan grup mencakup:
 
-- usernamefrom: Nama pengguna yang mengirim pesan.
+<!-- - usernamefrom: Nama pengguna yang mengirim pesan. -->
 - groupto: Nama grup yang akan menerima pesan.
 - message: Isi pesan yang dikirim.
 
 Format pesan yang dikirim ke server adalah:
 
 ```shell
-sendgroup usernamefrom:{usernamefrom} groupto:{groupto} message:{message} 
+sendgroup {groupto} {message} 
 ```
 
 #### Penerimaan Pesan Grup
@@ -158,13 +158,13 @@ Pengguna dapat mengambil pesan grup dengan menggunakan perintah `inboxgroup`.
 
 Protokol untuk mengambil pesan grup mencakup:
 
-- username: Nama pengguna yang meminta pesan.
+<!-- - username: Nama pengguna yang meminta pesan. -->
 - groupname: Nama grup dari mana pesan diambil.
 
 Format pesan yang dikirim ke server untuk mengambil pesan grup adalah:
 
 ```shell
-inboxgroup username:{username} groupname:{groupname} 
+inboxgroup {groupname} 
 ```
 
 ### Send and Receive File
