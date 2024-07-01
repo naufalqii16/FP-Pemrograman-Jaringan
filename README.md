@@ -14,6 +14,18 @@
   - [3.3. Bagaimana Menjalankan Server dan Client](#bagaimana-menjalankan-server-dan-client)
 - [4. Uji Awal dari Komunikasi](#uji-awal-dari-komunikasi)
 
+## Pembagian Tugas
+
+| Nama  | NRP | Tugas |
+| ------------- | ------------- | ------------- |
+| Andika Laksana Putra  | 5025211001  | Content Cell  |
+| M Naufal Baihaqi  | 5025211103  | Content Cell  |
+| Dewangga Dika Darmawan  | 502521109  | Content Cell  |
+| Kalyana Putri Al Kanza  | 5025211137  | Content Cell  |
+| Akmal Ariq Ramadhan  | 5025211188  | Content Cell  |
+| Alfa Fakhrur Rizal Zaini  | 5025211214  | Content Cell  |
+
+.55
 ## Panduan Menjalankan Program
 
 ### Step 1
@@ -27,44 +39,29 @@ masuk ke directory project lalu jalankan program
 flet run main.py
 ```
 
-## Pembagian Tugas
-
-| Nama  | NRP | Tugas |
-| ------------- | ------------- | ------------- |
-| Andika Laksana Putra  | 5025211001  | Content Cell  |
-| M Naufal Baihaqi  | 5025211103  | Content Cell  |
-| Dewangga Dika Darmawan  | 502521109  | Content Cell  |
-| Kalyana Putri Al Kanza  | 5025211137  | Content Cell  |
-| Akmal Ariq Ramadhan  | 5025211188  | Content Cell  |
-| Alfa Fakhrur Rizal Zaini  | 5025211214  | Content Cell  |
-
 ## Definisi Protokol Chat 
 
-### Private Messaging
+### **_Private Messaging_**
 
-#### Autentikasi Pengguna
+- #### **Autentikasi Pengguna (_Login_)**
 
-Untuk mengirim dan menerima pesan pribadi, pengguna harus terautentikasi terlebih dahulu dengan menggunakan perintah `auth`.
+Untuk mengirim dan menerima pesan pribadi, pengguna harus terautentikasi terlebih dahulu dengan menggunakan perintah `auth`, dengan protokol untuk autentikasi mencakup:
 
-Protokol untuk autentikasi mencakup:
+- _username_: Nama pengguna.
+- _password_: Kata sandi pengguna.
 
-- username: Nama pengguna.
-- password: Kata sandi pengguna.
-
-Format pesan yang dikirim ke server untuk autentikasi adalah:
+Format pesan yang dikirim ke server untuk autentikasi adalah sebagai berikut:
 
 ```shell
 auth {username} {password}
 ```
 
-#### Pendaftaran Pengguna
+- #### **Pendaftaran Pengguna (_Register_)**
 
-Pengguna baru dapat mendaftar dengan menggunakan perintah `register`.
+Pengguna baru dapat mendaftar dengan menggunakan perintah `register`. Saat mendaftar, protokol yang digunakan adalah sebagai berikut: 
 
-Protokol untuk pendaftaran mencakup:
-
-- username: Nama pengguna yang akan didaftarkan.
-- password: Kata sandi pengguna yang akan didaftarkan.
+- _username_: Nama pengguna yang akan didaftarkan.
+- _password_: Kata sandi pengguna yang akan didaftarkan.
 <!-- - realm_id: ID realm tempat pengguna akan terdaftar. -->
 
 Format pesan yang dikirim ke server untuk pendaftaran adalah:
@@ -73,30 +70,26 @@ Format pesan yang dikirim ke server untuk pendaftaran adalah:
 register {username} {password}
 ```
 
-#### Pengiriman Pesan Pribadi
+- #### **Pengiriman Pesan Pribadi (_Send Private Message_)**
 
-Pesan pribadi dikirim dengan menggunakan perintah `sendprivate`.
-
-Protokol untuk mengirim pesan pribadi mencakup:
+Pesan pribadi dikirim dengan menggunakan perintah `sendprivate`, dengan protokol untuk mengirim pesan pribadi
 
 <!-- - sessionid: ID sesi pengguna yang mengirim pesan. -->
-- usernameto: Nama pengguna yang akan menerima pesan.
+- _usernameto_: Nama pengguna yang akan menerima pesan.
 <!-- - usernamefrom: Nama pengguna yang mengirim pesan. -->
-- message: Isi pesan yang dikirim.
+- _message_: Isi pesan yang dikirim.
 
-Format pesan yang dikirim ke server adalah:
+Format pesan yang dikirim ke server untuk pengiriman pesan pribadi (_Private Message_) adalah:
 
 ```
 sendprivate {usernameto} {message} 
 ```
 
-#### Penerimaan Pesan Pribadi
+- #### **Penerimaan Pesan Pribadi (_Receive Private Message)_**
 
-Pengguna dapat mengambil pesan pribadi dengan menggunakan perintah `inbox`.
-<!-- 
-Protokol untuk mengambil pesan pribadi mencakup:
+Pengguna dapat mengambil pesan pribadi dengan menggunakan perintah `inbox`, dengan protokol yang digunakan untuk mengambil pesan pribadi mencakup:
 
-- username: Nama pengguna yang meminta pesan. -->
+<!-- - username: Nama pengguna yang meminta pesan. -->
 
 Format pesan yang dikirim ke server untuk mengambil pesan pribadi adalah:
 
@@ -168,9 +161,38 @@ inboxgroup {groupname}
 ```
 
 ### Send and Receive File
+Pengguna dapat mengirim dan menerima file dengan menggunakan perintah `adios`. Format pesan yang dikirim ke server untuk mengirim dan menerima file adalah sebagai berikut:
+
+- **Send file**--
+```shell
+sendfile {usernameto} {PATH FILE} 
+``` 
+
+- **Receive file**
+```shell
+receivefile
+``` 
+
 ## Definisi Protokol Pertukaran Antar Server
+Pada arsitektur chat multi realm kami, terdapat 1 server utama yang menjadi
+handler untuk keseluruhan operasi. Main server akan melakukan proses permintaan proses
+yang diberikan oleh client. Server realm merupakan server yang menjadi handler untuk permintaan
+user di realm, serta menjadi session handler dari setiap user yang terhubung dengan service 
+utama. Setiap permintaan user akan melewati server realm sebelum dikirimkan ke server
+utama untuk diproses. chat-cli merupakan service local yang terhubung dengan aplikasi frontend
+untuk memproses permintaan user ke realm server.
+
 ## Arsitektur Implementasi
+Berikut adalah arsitektur implementasi dari aplikasi yang dibuat untuk _final project_ dari kelompok kami (Kelompok 14)
+
 ### IP Address
+Main Server: 192.168.xxx.xxx <br>
+Realm Server: 192.168.xxx.xxx
+
 ### Port dari Server
+_Main server_ memiliki nilai port 8080 untuk terhubung dengan server realm, realm server memiliki nilai port 8000 untuk terhubung dengan client.
+
 ### Bagaimana Menjalankan Server dan Client
+Untuk menjalankan server, main server harus menyala dan siap menerima koneksi terlebih dahulu di port 8080. Sebelum client bisa berkomunikasi, realm server harus menyala terlebih dahulu. Pada port 8000 untuk terhubung dengan client. aplikasi frontend akan menggunakan service dari chat-cli untuk bisa berkomunikasi dengan realm server dan melakukan segala operasi chat.
+
 ## Uji Awal dari Komunikasi
