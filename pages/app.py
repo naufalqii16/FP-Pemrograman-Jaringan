@@ -1,6 +1,7 @@
 from datetime import datetime
 import flet as ft
 import json
+import os
 
 # Global variable to store logged-in user
 current_user = None
@@ -14,9 +15,32 @@ def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     chat_room_messages = []  # Initialize chat room messages list
+    
+    def open_chat_option(profile):
+        global current_chat_room
+        
+        dialog = ft.AlertDialog(
+            title=ft.Text("Open Chat Option"),
+            content=ft.Column([
+                ft.Text(f"Profile: {profile['username']}"),
+                ft.TextButton(text="Open Chat", on_click=lambda e: open_chat(profile)),
+                ft.TextButton(text="Open Chat File", on_click=lambda e: open_chat_file(profile)),
+            ]),
+            actions=[ft.TextButton(text="Cancel")],
+        )
+        page.dialog = dialog
+        dialog.open = True
+        page.update()
+        
+        def close_dialog(e):
+            dialog.open = False
+            page.update()
+        
+        dialog.actions[0].on_click = close_dialog
 
     def open_chat(profile):
-        global current_chat_room  # Use global to modify global variable
+        global current_chat_room
+        global current_group_chat  # Use global to modify global variable
 
         if current_chat_room != profile["username"]:
             current_chat_room = profile["username"]
@@ -68,8 +92,76 @@ def main(page: ft.Page):
                         )
                     page.update()
     
-    def open_group_chat(group_name):
+    def open_chat_file(profile):
+        global current_chat_room
         global current_group_chat  # Use global to modify global variable
+
+        file_name = []
+        directory = 'asset'  # Specify the directory path
+
+        for filename in os.listdir(directory):
+            file_name.append(filename)
+        
+        # print(file_name)
+
+        if current_chat_room != profile["username"]:
+            current_chat_room = profile["username"]
+            current_group_chat = None  # Reset group chat
+            chat_room_messages.clear()  # Clear previous messages
+
+            page.snack_bar = ft.SnackBar(
+                ft.Text(f"Opening chat with {profile['username']}"),
+                bgcolor=ft.colors.GREEN,
+            )
+            page.snack_bar.open = True
+            page.update()
+            update_chat_room(profile["username"])
+
+            with open('../db/file_message.json', 'r') as f:
+                private_messages = json.load(f)
+
+            chat = []
+            for message in private_messages["data"]:
+                if (message["sender"] == current_user and message["receiver"] == current_chat_room) or (message["sender"] == current_chat_room and message["receiver"] == current_user):
+                    chat.append(message)
+
+            # Decode file if doesn't exist
+            if chat:
+                for message in chat:
+                    if message["message"] not in file_name:
+                        # Decode Here
+                        pass
+            
+            # Display Chat
+            if chat:
+                for message in chat:
+                    if message["sender"] == current_user:
+                        chat_room_messages.append(
+                            ft.Container(
+                                ft.Image(
+                                    src=f'asset/{message["message"]}',
+                                    width=200,
+                                    height=200,
+                                ),
+                                alignment=ft.alignment.center_right,
+                            )
+                        )
+                    else:
+                        chat_room_messages.append(
+                            ft.Container(
+                                ft.Image(
+                                    src=f'asset/{message["message"]}',
+                                    width=200,
+                                    height=200,
+                                ),
+                                alignment=ft.alignment.center_left,
+                            )
+                        )
+                    page.update()
+    
+    def open_group_chat(group_name):
+        global current_group_chat
+        global current_chat_room  # Use global to modify global variable
 
         if current_group_chat != group_name:
             current_group_chat = group_name
@@ -91,6 +183,8 @@ def main(page: ft.Page):
             for message in group_messages["data"]:
                 if message["receiver_group"] == current_group_chat:
                     chat.append(message)
+            
+            # print(chat)
 
             # Display Chat
             if chat:
@@ -171,7 +265,7 @@ def main(page: ft.Page):
                         ),
                         title=ft.Text(msg["username"], weight=ft.FontWeight.BOLD),
                         height=70,
-                        on_click=lambda e, msg=msg: open_chat(msg)  # Make each profile clickable
+                        on_click=lambda e, msg=msg: open_chat_option(msg)  # Make each profile clickable
                     )
                 )
 
@@ -375,28 +469,48 @@ def main(page: ft.Page):
                 page.update()
 
                 if current_chat_room:
-                    # Read existing messages or initialize if file doesn't exist
-                    try:
-                        with open('../db/private_message.json', 'r') as f:
-                            messages_data = json.load(f)
-                    except (FileNotFoundError, json.JSONDecodeError):
-                        messages_data = {"data": []}
+                    if message.endswith('.jpeg') or message.endswith('.jpg') or message.endswith('.png'):
+                        # Read existing private messages or initialize if file doesn't exist
+                        try:
+                            with open('../db/file_message.json', 'r') as f:
+                                private_messages_data = json.load(f)
+                        except (FileNotFoundError, json.JSONDecodeError):
+                            private_messages_data = {"data": []}
 
-                    # Append the new message
-                    new_message = {
-                        "sender": current_user,
-                        "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                        "receiver": current_chat_room,
-                        "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                        "message": message,
-                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                    }
-                    messages_data["data"].append(new_message)
+                        # Append the new message
+                        new_message = {
+                            "sender": current_user,
+                            "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                            "receiver": current_chat_room,
+                            "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                            "message": message,
+                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                        }
+                        private_messages_data["data"].append(new_message)
 
-                    # Write back to the JSON file
-                    with open('../db/private_message_lol.json', 'w') as f:
-                        json.dump(messages_data, f, indent=4)
+                        # Write back to the JSON file
+                        with open('../db/file_message.json', 'w') as f:
+                            json.dump(private_messages_data, f, indent=4)
+                    else:
+                        try:
+                            with open('../db/private_message.json', 'r') as f:
+                                messages_data = json.load(f)
+                        except (FileNotFoundError, json.JSONDecodeError):
+                            messages_data = {"data": []}
 
+                        new_message = {
+                            "sender": current_user,
+                            "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                            "receiver": current_chat_room,
+                            "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                            "message": message,
+                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                        }
+                        messages_data["data"].append(new_message)
+
+                        with open('../db/private_message_lol.json', 'w') as f:
+                            json.dump(messages_data, f, indent=4)
+                    
                 elif current_group_chat:
                     # Read existing group messages or initialize if file doesn't exist
                     try:
@@ -418,6 +532,7 @@ def main(page: ft.Page):
                     # Write back to the JSON file
                     with open('../db/group_message.json', 'w') as f:
                         json.dump(group_messages_data, f, indent=4)
+
 
         message_input = ft.TextField(hint_text="Type a message", expand=True, border_color=ft.colors.WHITE)
         send_button = ft.ElevatedButton(text="Send", on_click=send_message)
