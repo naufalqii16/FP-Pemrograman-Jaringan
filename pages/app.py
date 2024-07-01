@@ -7,6 +7,7 @@ import os
 current_user = None
 current_chat_room = None  # To store the current chat room
 current_group_chat = None  # To store the current group chat
+current_chat_file = None
 
 def main(page: ft.Page):
     global chat_room, message_input, send_button, chat_room_messages
@@ -18,33 +19,46 @@ def main(page: ft.Page):
     
     def open_chat_option(profile):
         global current_chat_room
+        global is_chat_file
+        
+
+        def close_dialog(e):
+            dialog.open = False
+            page.update()
+        
+        def open_chat_and_close_dialog(e):
+            open_chat(profile)
+            close_dialog(e)
+
+        def open_chat_file_and_close_dialog(e):
+            open_chat_file(profile)
+            close_dialog(e)
         
         dialog = ft.AlertDialog(
             title=ft.Text("Open Chat Option"),
             content=ft.Column([
                 ft.Text(f"Profile: {profile['username']}"),
-                ft.TextButton(text="Open Chat", on_click=lambda e: open_chat(profile)),
-                ft.TextButton(text="Open Chat File", on_click=lambda e: open_chat_file(profile)),
+                ft.TextButton(text="Open Chat", on_click=lambda e: open_chat_and_close_dialog(profile)),
+                ft.TextButton(text="Open Chat File", on_click=lambda e: open_chat_file_and_close_dialog(profile)),
             ]),
-            actions=[ft.TextButton(text="Cancel")],
+            actions=[ft.TextButton(text="Cancel", on_click=close_dialog)]
         )
         page.dialog = dialog
         dialog.open = True
         page.update()
         
-        def close_dialog(e):
-            dialog.open = False
-            page.update()
         
-        dialog.actions[0].on_click = close_dialog
+        # dialog.actions[0].on_click = close_dialog
 
     def open_chat(profile):
         global current_chat_room
         global current_group_chat  # Use global to modify global variable
+        global current_chat_file
 
         if current_chat_room != profile["username"]:
             current_chat_room = profile["username"]
             current_group_chat = None  # Reset group chat
+            current_chat_file = None
             chat_room_messages.clear()  # Clear previous messages
 
             page.snack_bar = ft.SnackBar(
@@ -95,6 +109,7 @@ def main(page: ft.Page):
     def open_chat_file(profile):
         global current_chat_room
         global current_group_chat  # Use global to modify global variable
+        global current_chat_file
 
         file_name = []
         directory = 'asset'  # Specify the directory path
@@ -104,9 +119,10 @@ def main(page: ft.Page):
         
         # print(file_name)
 
-        if current_chat_room != profile["username"]:
-            current_chat_room = profile["username"]
+        if current_chat_file != profile["username"]:
+            current_chat_file = profile["username"]
             current_group_chat = None  # Reset group chat
+            current_chat_room = None
             chat_room_messages.clear()  # Clear previous messages
 
             page.snack_bar = ft.SnackBar(
@@ -122,7 +138,7 @@ def main(page: ft.Page):
 
             chat = []
             for message in private_messages["data"]:
-                if (message["sender"] == current_user and message["receiver"] == current_chat_room) or (message["sender"] == current_chat_room and message["receiver"] == current_user):
+                if (message["sender"] == current_user and message["receiver"] == current_chat_file) or (message["sender"] == current_chat_file and message["receiver"] == current_user):
                     chat.append(message)
 
             # Decode file if doesn't exist
@@ -162,10 +178,12 @@ def main(page: ft.Page):
     def open_group_chat(group_name):
         global current_group_chat
         global current_chat_room  # Use global to modify global variable
+        global current_chat_file
 
         if current_group_chat != group_name:
             current_group_chat = group_name
             current_chat_room = None  # Reset private chat
+            current_chat_file = None
             chat_room_messages.clear()  # Clear previous messages
 
             page.snack_bar = ft.SnackBar(
