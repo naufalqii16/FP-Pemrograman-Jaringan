@@ -5,6 +5,7 @@ import json
 # Global variable to store logged-in user
 current_user = None
 current_chat_room = None  # To store the current chat room
+current_group_chat = None  # To store the current group chat
 
 def main(page: ft.Page):
     global chat_room, message_input, send_button, chat_room_messages
@@ -19,6 +20,7 @@ def main(page: ft.Page):
 
         if current_chat_room != profile["username"]:
             current_chat_room = profile["username"]
+            current_group_chat = None  # Reset group chat
             chat_room_messages.clear()  # Clear previous messages
 
             page.snack_bar = ft.SnackBar(
@@ -66,6 +68,59 @@ def main(page: ft.Page):
                         )
                     page.update()
     
+    def open_group_chat(group_name):
+        global current_group_chat  # Use global to modify global variable
+
+        if current_group_chat != group_name:
+            current_group_chat = group_name
+            current_chat_room = None  # Reset private chat
+            chat_room_messages.clear()  # Clear previous messages
+
+            page.snack_bar = ft.SnackBar(
+                ft.Text(f"Opening chat in group {group_name}"),
+                bgcolor=ft.colors.GREEN,
+            )
+            page.snack_bar.open = True
+            page.update()
+            update_chat_room(group_name)
+
+            with open('../db/group_message.json', 'r') as f:
+                group_messages = json.load(f)
+
+            chat = []
+            for message in group_messages["data"]:
+                if message["receiver_group"] == current_group_chat:
+                    chat.append(message)
+
+            # Display Chat
+            if chat:
+                for message in chat:    
+                    if message["sender"] == current_user:
+                        chat_room_messages.append(
+                            ft.Container(
+                                ft.Text(message["message"], style=ft.TextStyle(color=ft.colors.WHITE)),
+                                bgcolor=ft.colors.BLUE,
+                                padding=10,
+                                border_radius=10,
+                                margin=5,
+                                alignment=ft.alignment.center_right,
+                                width="fit"
+                            )
+                        )
+                    else:
+                        chat_room_messages.append(
+                            ft.Container(
+                                ft.Text(message["message"], style=ft.TextStyle(color=ft.colors.BLUE)),
+                                bgcolor=ft.colors.WHITE,
+                                padding=10,
+                                border_radius=10,
+                                margin=5,
+                                alignment=ft.alignment.center_left,
+                                width="fit"
+                            )
+                        )
+                    page.update()
+
     def update_chat_room(room_name):
         chat_room.content = ft.Column([
             ft.Text(f"Chat Room: {room_name}", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD)),
@@ -139,7 +194,7 @@ def main(page: ft.Page):
                     ),
                     title=ft.Text(group_name, weight=ft.FontWeight.BOLD),
                     height=70,
-                    on_click=lambda e, group_name=group_name: open_chat({"username": group_name})  # Make each group clickable
+                    on_click=lambda e, group_name=group_name: open_group_chat(group_name)  # Make each group clickable
                 )
             )
 
@@ -222,12 +277,96 @@ def main(page: ft.Page):
             dialog.open = True
             page.update()
 
+        def show_join_group_dialog(e):
+            group_name_field = ft.TextField(label="Group Name", hint_text="Enter group name")
+            error_message = ft.Text(value="", color=ft.colors.RED, max_lines=2)
+
+            def join_group(e):
+                group_name = group_name_field.value.strip()
+
+                # Read existing groups from group.json
+                try:
+                    with open('../db/group.json', 'r') as f:
+                        group_data = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    group_data = {"data": []}
+
+                # Check if group exists
+                group_exists = False
+                for group in group_data["data"]:
+                    if group["group_name"].lower() == group_name.lower():
+                        group_exists = True
+                        break
+
+                if not group_exists:
+                    error_message.value = "Group does not exist. Please check the group name."
+                    page.update()
+                    return
+
+                # Read existing group_user data from group_user.json
+                try:
+                    with open('../db/group_user.json', 'r') as f:
+                        group_user_data = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    group_user_data = {"data": []}
+
+                # Check if user is already a member of the group
+                for group_user in group_user_data["data"]:
+                    if group_user["username"] == current_user and group_user["groupname"].lower() == group_name.lower():
+                        error_message.value = "You are already a member of this group."
+                        page.update()
+                        return
+
+                # Add new group_user data
+                group_user_entry = {
+                    "username": current_user,
+                    "groupname": group_name,
+                    "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0"
+                }
+
+                # Add new entry to group_user data
+                group_user_data["data"].append(group_user_entry)
+
+                # Write back to the JSON file
+                with open('../db/group_user.json', 'w') as f:
+                    json.dump(group_user_data, f, indent=4)
+
+                dialog.open = False  # Close the dialog
+                page.update()
+
+            def cancel_join_group(e):
+                dialog.open = False
+                page.update()
+
+            dialog = ft.AlertDialog(
+                title=ft.Text("Join Group"),
+                content=ft.Container(
+                    content=ft.Column([group_name_field, error_message], spacing=10),
+                    padding=ft.padding.all(10),
+                    width=300,
+                    height=150
+                ),
+                actions=[
+                    ft.ElevatedButton(text="Join", on_click=join_group),
+                    ft.TextButton(text="Cancel", on_click=cancel_join_group)
+                ]
+            )
+            page.dialog = dialog
+            dialog.open = True
+            page.update()
+
         create_group_button = ft.ElevatedButton(
             text="Create New Group",
             icon=ft.icons.GROUP_ADD,
             on_click=show_create_group_dialog
         )
         
+        join_group_button = ft.ElevatedButton(
+            text="Join Group",
+            icon=ft.icons.GROUP,
+            on_click=show_join_group_dialog
+        )
+
         def send_message(e):
             message = message_input.value
             if message:
@@ -235,27 +374,50 @@ def main(page: ft.Page):
                 message_input.value = ""
                 page.update()
 
-                # Read existing messages or initialize if file doesn't exist
-                try:
-                    with open('../db/private_message.json', 'r') as f:
-                        messages_data = json.load(f)
-                except (FileNotFoundError, json.JSONDecodeError):
-                    messages_data = {"data": []}
+                if current_chat_room:
+                    # Read existing messages or initialize if file doesn't exist
+                    try:
+                        with open('../db/private_message.json', 'r') as f:
+                            messages_data = json.load(f)
+                    except (FileNotFoundError, json.JSONDecodeError):
+                        messages_data = {"data": []}
 
-                # Append the new message
-                new_message = {
-                    "sender": current_user,
-                    "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                    "receiver": current_chat_room,
-                    "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
-                    "message": message,
-                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                }
-                messages_data["data"].append(new_message)
+                    # Append the new message
+                    new_message = {
+                        "sender": current_user,
+                        "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                        "receiver": current_chat_room,
+                        "receiver_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                        "message": message,
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                    }
+                    messages_data["data"].append(new_message)
 
-                # Write back to the JSON file
-                with open('../db/private_message_lol.json', 'w') as f:
-                    json.dump(messages_data, f, indent=4)
+                    # Write back to the JSON file
+                    with open('../db/private_message_lol.json', 'w') as f:
+                        json.dump(messages_data, f, indent=4)
+
+                elif current_group_chat:
+                    # Read existing group messages or initialize if file doesn't exist
+                    try:
+                        with open('../db/group_message.json', 'r') as f:
+                            group_messages_data = json.load(f)
+                    except (FileNotFoundError, json.JSONDecodeError):
+                        group_messages_data = {"data": []}
+
+                    # Append the new message
+                    new_message = {
+                        "sender": current_user,
+                        "sender_realm": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                        "receiver_group": current_group_chat,
+                        "message": message,
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                    }
+                    group_messages_data["data"].append(new_message)
+
+                    # Write back to the JSON file
+                    with open('../db/group_message.json', 'w') as f:
+                        json.dump(group_messages_data, f, indent=4)
 
         message_input = ft.TextField(hint_text="Type a message", expand=True, border_color=ft.colors.WHITE)
         send_button = ft.ElevatedButton(text="Send", on_click=send_message)
@@ -279,6 +441,7 @@ def main(page: ft.Page):
                         [
                             ft.Row([ft.Text("ConvoHub.", style=ft.TextStyle(size=24, weight=ft.FontWeight.BOLD))]),
                             ft.Row([create_group_button]),
+                            ft.Row([join_group_button]),
                             ft.Column(message_list, spacing=10, width=350),
                         ],
                         spacing=20,
@@ -412,38 +575,44 @@ def main(page: ft.Page):
             # Check if username already exists
             for user in data["data"]:
                 if user["username"] == username:
+                    print("Username already exists")
                     page.snack_bar = ft.SnackBar(
-                        ft.Text("Username already exists. Please choose a different username.", color=ft.colors.WHITE),
+                        ft.Text("Username already exists", color=ft.colors.WHITE),
                         bgcolor=ft.colors.RED,
                     )
                     page.snack_bar.open = True
                     page.update()
                     return
 
-            # Add new user to JSON data
-            data["data"].append({"username": username, "password": password})
+            # Add new user data
+            new_user = {
+                "realm_id": "c8adceb6-b41e-47e2-818a-a38c3451c9a0",
+                "username": username,
+                "password": password,
+            }
+            data["data"].append(new_user)
 
             # Write back to the JSON file
             with open('../db/user.json', 'w') as f:
                 json.dump(data, f, indent=4)
 
+            print("Registration Successful")
             page.snack_bar = ft.SnackBar(
-                ft.Text("Registration successful. You can now log in.", color=ft.colors.WHITE),
+                ft.Text("Registration Successful", color=ft.colors.WHITE),
                 bgcolor=ft.colors.GREEN,
             )
             page.snack_bar.open = True
             page.update()
+            login_page_content()  # Switch back to login page after successful registration
 
-            login_page_content()
-
-        username_register = ft.TextField(label="Username", hint_text="Enter your username", width=300)
-        password_register = ft.TextField(label="Password", hint_text="Enter your password", password=True, width=300)
+        username_register = ft.TextField(label="Username", hint_text="username", width=300)
+        password_register = ft.TextField(label="Password", password=True, width=300)
 
         register_button = ft.ElevatedButton(
-            text="Register",
+            text="Sign Up",
             on_click=on_register,
             width=300,
-            bgcolor=ft.colors.GREEN,
+            bgcolor=ft.colors.BLUE,
             color=ft.colors.WHITE,
         )
 
@@ -455,11 +624,16 @@ def main(page: ft.Page):
         page.add(
             ft.Column(
                 [
-                    ft.Text("Create an Account", size=24, weight=ft.FontWeight.BOLD),
+                    ft.Text("Create an account", size=24, weight=ft.FontWeight.BOLD),
                     username_register,
                     password_register,
                     register_button,
-                    back_to_login_button,
+                    ft.Row(
+                        [
+                            back_to_login_button,
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
                 ],
                 alignment=ft.MainAxisAlignment.CENTER,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -468,7 +642,6 @@ def main(page: ft.Page):
         )
 
     def register_form():
-        login_page_content()  # Clear login page content
         register_page_content()
 
     login_page_content()
