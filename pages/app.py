@@ -158,7 +158,7 @@ def main(page: ft.Page):
                         chat_room_messages.append(
                             ft.Container(
                                 ft.Image(
-                                    src=f'D:\\Vscode\\Semester 6\\Progjar\\fp-pemrograman-jaringan\\file_receive\\{message['sender']}\\{message["file_name"]}',
+                                    # src=f'D:\\Vscode\\Semester 6\\Progjar\\fp-pemrograman-jaringan\\file_receive\\{message['sender']}\\{message["file_name"]}',
                                     # src=f'./file_receive/{message["sender"]}/{message["file_name"]}',
                                     width=200,
                                     height=200,
@@ -170,7 +170,7 @@ def main(page: ft.Page):
                         chat_room_messages.append(
                             ft.Container(
                                 ft.Image(
-                                    src=f'D:\\Vscode\\Semester 6\\Progjar\\fp-pemrograman-jaringan\\file_receive\\{message['receiver']}\\{message["file_name"]}',
+                                    # src=f'D:\\Vscode\\Semester 6\\Progjar\\fp-pemrograman-jaringan\\file_receive\\{message['receiver']}\\{message["file_name"]}',
                                     # src=f'./file_receive/{message["sender"]}/{message["file_name"]}',
                                     width=200,
                                     height=200,
@@ -296,25 +296,33 @@ def main(page: ft.Page):
         user_groups = chatService.get_groups()  # Adjust this according to your API 
         # user_groups = user_groups['groups']
         print("USER GROUPS:", user_groups)
-        group_temp = user_groups['groups']
-    
-        for group_name in group_temp:
+        if(user_groups['status'] == 'OK'):
+            group_temp = user_groups['groups']  
+            for group_name in group_temp:
+                message_list.append(
+                    ft.ListTile(
+                        leading=ft.CircleAvatar(
+                            content=ft.Text(
+                                # print(group_name['groupname']),
+                                group_name['groupname'][0:2],
+                                style=ft.TextStyle(color=ft.colors.WHITE, size=20)
+                            ),
+                            bgcolor=ft.colors.PURPLE,
+                            radius=20
+                        ),
+                        title=ft.Text(group_name['groupname'], weight=ft.FontWeight.BOLD),
+                        height=70,
+                        on_click=lambda e, group_name=group_name['groupname']: open_group_chat(group_name)  # Make each group clickable
+                    )
+                )
+        else:
             message_list.append(
                 ft.ListTile(
-                    leading=ft.CircleAvatar(
-                        content=ft.Text(
-                            # print(group_name['groupname']),
-                            group_name['groupname'][0:2],
-                            style=ft.TextStyle(color=ft.colors.WHITE, size=20)
-                        ),
-                        bgcolor=ft.colors.PURPLE,
-                        radius=20
-                    ),
-                    title=ft.Text(group_name['groupname'], weight=ft.FontWeight.BOLD),
+                    title=ft.Text("No Group", weight=ft.FontWeight.BOLD),
                     height=70,
-                    on_click=lambda e, group_name=group_name['groupname']: open_group_chat(group_name)  # Make each group clickable
                 )
             )
+            
 
         def show_create_group_dialog(e):
             group_name_field = ft.TextField(label="Group Name", hint_text="Enter group name")
@@ -470,15 +478,15 @@ def main(page: ft.Page):
         )
 
     def logout(e):
+        login_page_content()
+
+    def back_to_login(e):
         global current_user  # Use global to modify global variable
         global current_chat_room
         global current_group_chat
         current_group_chat = None
         current_user = None
         current_chat_room = None
-        login_page_content()
-
-    def back_to_login(e):
         login_page_content()
 
     def login_page_content():

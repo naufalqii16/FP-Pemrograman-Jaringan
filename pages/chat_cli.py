@@ -52,13 +52,10 @@ class ChatClient:
             elif (command == 'receivefile'):
                 return self.receivefile()
             elif (command == 'inbox'):
-                sender = j[1].strip()
-                return self.inbox(sender)
+                return self.inbox()
             elif (command == 'inboxgroup'):
                 groupname = j[1].strip()
                 return self.inbox_group(groupname)
-            elif (command == 'getallusers'):
-                return self.getallusers()
             else:
                 return "*Maaf, command tidak benar"
         except IndexError:
@@ -69,59 +66,43 @@ class ChatClient:
             self.sock.sendall(string.encode())
             while True:
                 data = self.sock.recv(10000000)
-                # print("diterima dari server", data)
-                if (data):
-                    # data harus didecode agar dapat di operasikan dalam bentuk string
+                if data:
                     receivemsg = data.decode("utf-8")
                     if receivemsg[-4:] == '\r\n\r\n':
                         data = receivemsg[:-4].strip()
-                        print("end of string")
-                        print(data)
                         loaded_json = json.loads(data)
-                        print('udah di load coy')
                         return loaded_json
         except Exception as e:
             self.sock.close()
             print(e)
             return {'status': 'ERROR', 'message': 'Gagal'}
-        
-    def getallusers(self):
-        string = "getallusers \r\n"
-        result = self.sendstring(string)
-        return result
 
     def register(self, username, password):
         string = "register {} {} \r\n" . format(username, password)
         result = self.sendstring(string)
-        return result
-        # if result['status'] == 'OK':
-        #     return "username {} successfully registered " .format(username)
-        # else:
-        #     return "Error, {}" . format(result['message'])
+        if result['status'] == 'OK':
+            return "username {} successfully registered " .format(username)
+        else:
+            return "Error, {}" . format(result['message'])
         
     def create_group(self, groupname):
         string = "creategroup {} \r\n" . format(groupname)
         result = self.sendstring(string)
-        return result
-        # if result['status'] == 'OK':
-        #     return "groupname {} successfully created " .format(groupname)
-        # else:
-        #     return "Error, {}" . format(result['message'])
+        if result['status'] == 'OK':
+            return "groupname {} successfully created " .format(groupname)
+        else:
+            return "Error, {}" . format(result['message'])
         
         
     def login(self, username, password):
         string = "auth {} {} \r\n" . format(username, password)
         result = self.sendstring(string)
         if result['status'] == 'OK':
-            self.realm_id = result['realm_id']
             self.token_id = result['token_id']
-        return result
-        # if result['status'] == 'OK':
-        #     self.token_id = result['token_id']
-        #     self.realm_id = result['realm_id']
-        #     return "username {} logged in, token {} " .format(username, self.token_id)
-        # else:
-        #     return "Error, {}" . format(result['message'])
+            self.realm_id = result['realm_id']
+            return "username {} logged in, token {} " .format(username, self.token_id)
+        else:
+            return "Error, {}" . format(result['message'])
 
     def sendmessage(self, usernameto="xxx", message="xxx"):
         if (self.token_id == ""):
@@ -129,11 +110,10 @@ class ChatClient:
         string = "sendprivate {} {} {} \r\n" . format(
             self.token_id, usernameto, message)
         result = self.sendstring(string)
-        return result
-        # if result['status'] == 'OK':
-        #     return "message sent to {}" . format(usernameto)
-        # else:
-        #     return "Error, {}" . format(result['message'])
+        if result['status'] == 'OK':
+            return "message sent to {}" . format(usernameto)
+        else:
+            return "Error, {}" . format(result['message'])
         
     def join_group(self, groupname):
         if (self.token_id == ""):
@@ -141,11 +121,10 @@ class ChatClient:
         string = "joingroup {} {} {} \r\n" . format(self.token_id, groupname, self.realm_id)
         print(string)
         result = self.sendstring(string)
-        return result
-        # if result['status'] == 'OK':
-        #     return "groupname {} successfully joined " .format(groupname)
-        # else:
-        #     return "Error, {}" . format(result['message'])
+        if result['status'] == 'OK':
+            return "groupname {} successfully joined " .format(groupname)
+        else:
+            return "Error, {}" . format(result['message'])
 
     def sendmessage_group(self, groupto="xxx", message="xxx"):
         if (self.token_id == ""):
@@ -153,12 +132,11 @@ class ChatClient:
         string = "sendgroup {} {} {} \r\n" . format(
             self.token_id, groupto, message)
         result = self.sendstring(string)
-        return result
-        # if result['status'] == 'OK':
-        #     return "message sent to {}" . format(groupto)
-        # else:
-        #     return "Error, {}" . format(result['message'])
-    
+        if result['status'] == 'OK':
+            return "message sent to {}" . format(groupto)
+        else:
+            return "Error, {}" . format(result['message'])
+        
     def sendfile(self, usernameto="xxx", filepath="xxx"):
         if (self.token_id == ""):
             return "Error, not authorized"
@@ -176,11 +154,11 @@ class ChatClient:
         else:
             return "Error, {}" . format(result['message'])
     
-    def receivefile(self,sender):
+    def receivefile(self):
         if (self.token_id == ""):
             return "Error, not authorized"
 
-        string = "receivefile {} {} \r\n" . format(self.token_id, sender)
+        string = "receivefile {} \r\n" . format(self.token_id)
 
         result = self.sendstring(string)
 
@@ -188,7 +166,7 @@ class ChatClient:
 
         if result['status'] == 'OK':
             for message in result['content']:
-                filename = f"{message['file_name']}"
+                filename = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_ConvoHub_{message['file_name']}"
                 file_content = message['file_content']
                 if(directories := os.path.join(os.getcwd(), "file_receive", message['receiver'])):
                     os.makedirs(directories, exist_ok=True)
@@ -203,7 +181,7 @@ class ChatClient:
             else:
                 tail = file_content.split()
             
-            return result
+            return "file received"
 
         # file_destination = os.path.join(folder_path, filename)
 
@@ -218,31 +196,26 @@ class ChatClient:
         # else:
         #     return "Error, {}" . format(result['message'])
 
-    def inbox(self,sender):
+    def inbox(self):
         if (self.token_id == ""):
             return "Error, not authorized"
-        string = "inbox {} {} \r\n" . format(self.token_id, sender)
+        string = "inbox {} \r\n" . format(self.token_id)
         result = self.sendstring(string)
-        return result
-        # if result['status'] == 'OK':
-        #     return "{}" . format(json.dumps(result['messages']))
-        # else:
-        #     return "Error, {}" . format(result['message'])
-
-    def get_groups(self):
-        if (self.token_id == ""):
-            return "Error, not authorized"
-        string = "getallgroups {} \r\n".format(self.token_id)
-        result = self.sendstring(string)
-        return result
-    
+        if result['status'] == 'OK':
+            return "{}" . format(json.dumps(result['messages']))
+        else:
+            return "Error, {}" . format(result['message'])
 
     def inbox_group(self, groupname):
         if (self.token_id == ""):
             return "Error, not authorized"
         string = "inboxgroup {} {}\r\n" . format(self.token_id, groupname)
         result = self.sendstring(string)
-        return result
+        if result['status'] == 'OK':
+            return "{}" . format(result['messages'])
+        else:
+            return "Error, {}" . format(result['message'])
+
 
 if __name__ == "__main__":
     cc = ChatClient()
