@@ -1,4 +1,5 @@
 ## Daftar Isi
+<div align=justify>
 
 - [i. Daftar Isi](#daftar-isi)
 - [ii. Panduan Menjalankan Program](#panduan-menjalankan-program)
@@ -22,10 +23,9 @@
 | M Naufal Baihaqi  | 5025211103  | Frontend  |
 | Dewangga Dika Darmawan  | 502521109  | Frontend  |
 | Kalyana Putri Al Kanza  | 5025211137  | Documentation, Integration  |
-| Akmal Ariq Ramadhan  | 5025211188  | Documentation, Integration  |
+| Akmal Ariq Romadhon  | 5025211188  | Documentation, Integration  |
 | Alfa Fakhrur Rizal Zaini  | 5025211214  | Backend  |
 
-.55
 ## Panduan Menjalankan Program
 
 ### Step 1
@@ -156,6 +156,8 @@ Pengguna dapat mengirim dan menerima file dengan menggunakan perintah `adios`. F
 - #### **Mengirim File (_Send File_)**
 
 Pengguna dapat mengirim file ke private message menggunakan perintah `sendfile` dan menggunakan Protokol sebagai berikut:
+- _usernameto_: Nama pengguna yang akan dikirimkan file.
+- _PATH_: Lokasi atau directory dari _file_ yang dikirim.
 
 Format pesan yang dikirim ke server untuk bergabung ke grup adalah:
 
@@ -167,6 +169,9 @@ sendfile {usernameto} {PATH}
 
 Pengguna dapat mengirim file ke private message menggunakan perintah `receivefile` dan menggunakan Protokol sebagai berikut:
 
+```shell
+receivefile
+```
 Format pesan yang dikirim ke server untuk bergabung ke grup adalah:
 
 ```shell
